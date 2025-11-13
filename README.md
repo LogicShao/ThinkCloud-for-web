@@ -40,12 +40,26 @@
 - `gpt-4-turbo`
 - `gpt-3.5-turbo`
 
+### DashScope（阿里云百炼）
+
+- `qwen-max`
+- `qwen-plus`
+- `qwen-turbo`
+- `qwen-long`
+- `qwen-vl-max`
+- `qwen-vl-plus`
+- `qwen-audio-turbo`
+- `qwen2-7b-instruct`
+- `qwen2-72b-instruct`
+- `qwen2-1.5b-instruct`
+- `qwen2-57b-a14b-instruct`
+
 ## 安装和运行
 
 ### 1. 克隆项目
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/LogicShao/SimpleLLMFrontend.git
 cd SimpleLLMFront
 ```
 
@@ -90,6 +104,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 set CEREBRAS_API_KEY=your_api_key_here
 set DEEPSEEK_API_KEY=your_api_key_here
 set OPENAI_API_KEY=your_api_key_here
+set DASHSCOPE_API_KEY=your_api_key_here
 ```
 
 ##### Windows (PowerShell)
@@ -98,6 +113,7 @@ set OPENAI_API_KEY=your_api_key_here
 $env:CEREBRAS_API_KEY="your_api_key_here"
 $env:DEEPSEEK_API_KEY="your_api_key_here"
 $env:OPENAI_API_KEY="your_api_key_here"
+$env:DASHSCOPE_API_KEY="your_api_key_here"
 ```
 
 ##### Linux/Mac
@@ -106,6 +122,7 @@ $env:OPENAI_API_KEY="your_api_key_here"
 export CEREBRAS_API_KEY=your_api_key_here
 export DEEPSEEK_API_KEY=your_api_key_here
 export OPENAI_API_KEY=your_api_key_here
+export DASHSCOPE_API_KEY=your_api_key_here
 ```
 
 ### 4. 运行应用

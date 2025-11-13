@@ -28,6 +28,7 @@ The system uses an abstract `BaseProvider` class that all concrete providers imp
 - `CerebrasProvider`: Uses Cerebras Cloud SDK for Cerebras models
 - `DeepSeekProvider`: Uses OpenAI SDK with DeepSeek's base URL
 - `OpenAIProvider`: Uses OpenAI SDK for OpenAI models
+- `DashScopeProvider`: Uses OpenAI SDK with DashScope's base URL for Alibaba Cloud models
 
 Each provider implements the same interface (`is_available()`, `chat_completion()`) allowing seamless switching between
 providers.
@@ -39,6 +40,8 @@ Models are automatically mapped to their respective providers:
 - Cerebras models: llama-3.x, qwen-3.x, zai-glm-4.6, gpt-oss-120b
 - DeepSeek models: deepseek-chat, deepseek-coder, deepseek-reasoner
 - OpenAI models: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
+- DashScope models: qwen-max, qwen-plus, qwen-turbo, qwen-long, qwen-vl-max, qwen-vl-plus, qwen-audio-turbo, qwen2
+  series
 
 ## Development Commands
 
@@ -69,6 +72,7 @@ Configure API keys in `.env` file:
 - `CEREBRAS_API_KEY`: For Cerebras models (https://cloud.cerebras.ai/)
 - `DEEPSEEK_API_KEY`: For DeepSeek models (https://platform.deepseek.com/)
 - `OPENAI_API_KEY`: For OpenAI models (https://platform.openai.com/)
+- `DASHSCOPE_API_KEY`: For DashScope models (https://dashscope.aliyuncs.com/)
 
 At least one provider API key must be configured for the application to function.
 

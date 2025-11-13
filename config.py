@@ -25,6 +25,11 @@ PROVIDER_CONFIG = {
         "api_key": os.environ.get("OPENAI_API_KEY"),
         "base_url": "https://api.openai.com/v1",
         "enabled": True
+    },
+    "dashscope": {
+        "api_key": os.environ.get("DASHSCOPE_API_KEY"),
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "enabled": True
     }
 }
 
@@ -55,6 +60,19 @@ PROVIDER_MODELS = {
         "gpt-4o-mini",
         "gpt-4-turbo",
         "gpt-3.5-turbo"
+    ],
+    "dashscope": [
+        "qwen-max",
+        "qwen-plus",
+        "qwen-turbo",
+        "qwen-long",
+        "qwen-vl-max",
+        "qwen-vl-plus",
+        "qwen-audio-turbo",
+        "qwen2-7b-instruct",
+        "qwen2-72b-instruct",
+        "qwen2-1.5b-instruct",
+        "qwen2-57b-a14b-instruct"
     ]
 }
 
