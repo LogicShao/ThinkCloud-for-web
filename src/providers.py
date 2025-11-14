@@ -8,7 +8,7 @@ from typing import List, Dict
 from cerebras.cloud.sdk import Cerebras
 from openai import OpenAI
 
-from config import get_provider_config
+from .config import get_provider_config
 
 
 class BaseProvider(ABC):
@@ -253,7 +253,7 @@ class ProviderFactory:
     @classmethod
     def get_available_providers(cls) -> List[str]:
         """获取可用的提供商列表"""
-        from config import get_enabled_providers
+        from .config import get_enabled_providers
         return get_enabled_providers()
 
     @classmethod

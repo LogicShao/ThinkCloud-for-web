@@ -2,8 +2,8 @@
 API服务模块 - 处理多提供商API调用
 """
 
-from config import get_model_provider
-from providers import ProviderFactory
+from .config import get_model_provider
+from .providers import ProviderFactory
 
 
 class MultiProviderAPIService:
