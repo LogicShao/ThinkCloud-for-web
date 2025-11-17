@@ -287,7 +287,7 @@ def find_available_port(start_port=7860, max_attempts=100, host="0.0.0.0"):
         if is_port_available(port, host):
             return port
 
-    print(f"⚠️ 警告: 在 {start_port}-{start_port + max_attempts - 1} 范围内未找到可用端口")
+    print(f"[WARN] 警告: 在 {start_port}-{start_port + max_attempts - 1} 范围内未找到可用端口")
     return None
 
 
@@ -304,17 +304,17 @@ def get_server_port(preferred_port=SERVER_PORT, host=SERVER_HOST):
     """
     # 首先检查首选端口
     if is_port_available(preferred_port, host):
-        print(f"✅ 使用端口: {preferred_port}")
+        print(f"[OK] 使用端口: {preferred_port}")
         return preferred_port
 
     # 首选端口被占用，查找可用端口
-    print(f"⚠️  端口 {preferred_port} 已被占用，正在查找可用端口...")
+    print(f"[WARN] 端口 {preferred_port} 已被占用，正在查找可用端口...")
     available_port = find_available_port(preferred_port + 1, max_attempts=100, host=host)
 
     if available_port:
-        print(f"✅ 找到可用端口: {available_port}")
+        print(f"[OK] 找到可用端口: {available_port}")
         return available_port
     else:
         # 实在找不到，返回None让系统随机分配
-        print("⚠️  未找到可用端口，将使用系统随机分配的端口")
+        print("[WARN] 未找到可用端口，将使用系统随机分配的端口")
         return None

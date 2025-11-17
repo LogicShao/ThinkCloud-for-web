@@ -5,16 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 A multi-provider LLM chat client built with Gradio supporting Cerebras, DeepSeek, OpenAI, and DashScope (Alibaba Cloud).
-Features a modern dark-themed UI with intelligent model selection and automatic port management.
+Features a clean Gradio interface with intelligent model selection and automatic port management.
 
 ## Project Structure
 
 ```
 SimpleLLMFront/
-├── src/                    # Source modules (NEW: reorganized structure)
-│   ├── api_service.py      # Multi-provider API orchestration
+├── src/                    # Source modules
+│   ├── api_service.py      # Multi-provider API orchestration (singleton pattern)
 │   ├── chat_manager.py     # Conversation history management
-│   ├── config.py           # Configuration and utilities
+│   ├── config.py           # Configuration, provider/model mappings, port utilities
 │   └── providers.py        # Provider implementations (factory pattern)
 ├── main.py                 # Gradio UI and application entry point
 ├── tests/                  # Test scripts
@@ -25,8 +25,7 @@ SimpleLLMFront/
 └── .env                    # API keys (gitignored)
 ```
 
-**IMPORTANT**: All imports in `main.py` now use `src.` prefix (e.g., `from src.config import ...`). When modifying code,
-maintain this import structure.
+**Import Convention**: All imports in `main.py` use `src.` prefix (e.g., `from src.config import ...`).
 
 ## Development Commands
 
@@ -50,9 +49,8 @@ python main.py
 ```
 
 ### Testing
-
 ```bash
-# Test UI components and theme
+# Test UI components
 python tests/test_ui.py
 
 # Test port finder functionality
@@ -61,7 +59,7 @@ python tests/test_port_finder.py
 # Test model selector with provider info
 python tests/test_model_selector.py
 
-# Syntax validation
+# Syntax validation (all source files)
 python -m py_compile main.py src/*.py
 ```
 
@@ -69,8 +67,8 @@ python -m py_compile main.py src/*.py
 
 ### Core Components
 
-- **MultiProviderAPIService** (`src/api_service.py`): Singleton service managing multiple AI providers, routing requests
-  based on model selection. Initializes all available providers on startup.
+- **MultiProviderAPIService** (`src/api_service.py`): Singleton service managing multiple AI providers. Routes requests
+  based on model selection and initializes all available providers on startup.
 
 - **Provider Factory Pattern** (`src/providers.py`): Abstract `BaseProvider` class with concrete implementations:
     - `CerebrasProvider`: Uses Cerebras Cloud SDK
@@ -78,60 +76,68 @@ python -m py_compile main.py src/*.py
     - `OpenAIProvider`: Standard OpenAI SDK
     - `DashScopeProvider`: OpenAI SDK with Alibaba Cloud endpoint
 
-- **Configuration** (`src/config.py`): Centralized config including:
-    - Provider settings and API keys (from `.env`)
-    - Model-to-provider mapping (`PROVIDER_MODELS`)
+- **Configuration** (`src/config.py`): Centralized configuration including:
+    - Provider settings and API keys (loaded from `.env` via python-dotenv)
+    - Model-to-provider mapping (`PROVIDER_MODELS` - 28+ models across 4 providers)
     - Port management utilities (`get_server_port()`, `is_port_available()`)
-    - Model display helpers (`get_models_with_provider()`, `extract_model_id()`)
+    - Provider display name mapping (`PROVIDER_DISPLAY_NAMES`)
 
 - **Chat Manager** (`src/chat_manager.py`):
-    - `ChatManager`: Maintains conversation history
-    - `MessageProcessor`: Converts between Gradio and API message formats
+    - `ChatManager`: Maintains conversation history in memory
+    - `MessageProcessor`: Converts between Gradio and API message formats (currently transparent as both use same
+      format)
 
-- **Gradio Interface** (`main.py`): Dark-themed UI with:
-    - Model selector displaying "🔹 Provider | model-name" format
-    - Real-time provider status
+- **Gradio Interface** (`main.py`): Clean UI with:
+    - Two-level selection: Provider dropdown → Model dropdown
+    - Real-time provider status display
     - Message history with copy buttons
-    - Responsive design with glassmorphism effects
+    - Export conversation functionality
 
 ### Model Selection Flow
 
 ```
-User selects: "🔹 Cerebras | llama-3.3-70b"
+User selects provider "Cerebras" in dropdown
        ↓
-extract_model_id() → "llama-3.3-70b"
+update_models() triggered → fetches PROVIDER_MODELS["cerebras"]
        ↓
-get_model_provider() → "cerebras"
+Model dropdown updates with cerebras models
+       ↓
+User selects model "llama-3.3-70b"
+       ↓
+get_model_provider("llama-3.3-70b") → identifies "cerebras"
        ↓
 MultiProviderAPIService routes to CerebrasProvider
        ↓
-API call with actual model ID
+API call with model="llama-3.3-70b"
 ```
 
-**Key Function**: `extract_model_id()` in `src/config.py` parses display names to extract real model IDs for API calls.
+**Key Flow**: Provider selection updates available models via `update_models()` in event handlers. The
+`get_model_provider()` function reverse-maps models to providers for API routing.
 
 ### Port Management
 
-The application automatically finds available ports:
+The application automatically finds available ports to avoid conflicts:
 
-- Default: 7860
-- If occupied: scans 7861-7959
-- Fallback: system-assigned random port
+- **Default**: 7860
+- **Fallback Range**: 7861-7959 (scans sequentially)
+- **Final Fallback**: System-assigned random port (port=None)
 
-Functions in `src/config.py`:
+**Key Functions** (`src/config.py`):
 
-- `is_port_available(port)`: Check port availability
-- `find_available_port(start_port)`: Find next available port
-- `get_server_port()`: Main entry point used by `main.py`
+- `is_port_available(port)`: Check if a port is free
+- `find_available_port(start_port)`: Scan for next available port
+- `get_server_port(start_port, host)`: Main entry point used by `main.py`
 
-### Message Format Conversion
+### Message Format
 
-Two formats are handled:
+Both Gradio and all provider APIs use the standard OpenAI message format:
 
-- **API Format**: `{"role": "user|assistant", "content": "..."}`
-- **Gradio Format**: Same structure, used for UI display
+```python
+{"role": "user|assistant", "content": "..."}
+```
 
-`MessageProcessor` handles conversions transparently.
+The `MessageProcessor` class exists for potential future format conversions but currently passes messages through
+transparently.
 
 ## Configuration
 
@@ -150,79 +156,95 @@ DASHSCOPE_API_KEY=sk-...        # https://dashscope.aliyuncs.com/
 
 Located in `src/config.py`:
 
-- `PROVIDER_CONFIG`: API keys, base URLs, enabled status
-- `PROVIDER_MODELS`: Model lists per provider (28+ models total)
-- `PROVIDER_DISPLAY_NAMES`: UI display names
+- `PROVIDER_CONFIG`: API keys, base URLs, enabled status for each provider
+- `PROVIDER_MODELS`: Model lists per provider (10 Cerebras, 3 DeepSeek, 4 OpenAI, 11 DashScope)
+- `PROVIDER_DISPLAY_NAMES`: UI display names mapping
 - `DEFAULT_MODEL`: "qwen-3-235b-a22b-thinking-2507"
-
-## UI Theme System
-
-Modern dark theme with cyan/blue gradients:
-
-- **Background**: Deep blue gradient (#0f172a → #1e1b4b)
-- **Primary**: Cyan-blue gradient (#06b6d4 → #3b82f6)
-- **Cards**: Glassmorphism with backdrop blur
-- **Text**: Light gray (#e2e8f0, #cbd5e1)
-
-CSS customization in `main.py` `_get_custom_css()` method.
+- `DEFAULT_PROVIDER`: "cerebras"
 
 ## Adding New Providers
 
-1. Create provider class in `src/providers.py`:
+Follow these steps to add a new AI provider:
 
-```python
-class NewProvider(BaseProvider):
-    def _initialize_client(self): ...
+1. **Create provider class** in `src/providers.py`:
+   ```python
+   class NewProvider(BaseProvider):
+       def _initialize_client(self):
+           # Initialize SDK client
+           pass
 
-    def is_available(self) -> bool: ...
+       def is_available(self) -> bool:
+           # Check if API key is configured
+           return self.client is not None
 
-    def chat_completion(self, messages, model) -> str: ...
-```
+       def chat_completion(self, messages, model) -> str:
+           # Call provider API and return response
+           pass
+   ```
 
-2. Register in `ProviderFactory._providers`:
+2. **Register in ProviderFactory** (`src/providers.py`):
+   ```python
+   _providers = {
+       "newprovider": NewProvider,
+       # ... existing providers
+   }
+   ```
 
-```python
-"newprovider": NewProvider
-```
+3. **Add configuration** (`src/config.py`):
+   ```python
+   PROVIDER_CONFIG["newprovider"] = {
+       "api_key": os.environ.get("NEWPROVIDER_API_KEY"),
+       "base_url": "https://api.newprovider.com/v1",
+       "enabled": True
+   }
 
-3. Add to `src/config.py`:
+   PROVIDER_MODELS["newprovider"] = ["model-1", "model-2"]
 
-```python
-PROVIDER_CONFIG["newprovider"] = {...}
-PROVIDER_MODELS["newprovider"] = [...]
-PROVIDER_DISPLAY_NAMES["newprovider"] = "NewProvider"
-```
+   PROVIDER_DISPLAY_NAMES["newprovider"] = "NewProvider"
+   ```
 
-4. Set environment variable: `NEWPROVIDER_API_KEY`
+4. **Set environment variable**: Add `NEWPROVIDER_API_KEY` to `.env` file
 
 ## Error Handling
 
-- Missing API keys: Clear error messages indicate which provider needs configuration
-- Failed API calls: Return descriptive error strings shown in chat
-- Port conflicts: Automatic port scanning with user notification
-- Provider unavailability: Gracefully handled with status display
+The application provides clear error messages for common issues:
+
+- **Missing API keys**: Identifies which provider needs configuration with specific env var name
+- **Failed API calls**: Returns descriptive error strings displayed directly in chat interface
+- **Port conflicts**: Automatically scans for alternative ports with console notifications
+- **Provider unavailability**: Gracefully handled with status indicators in UI
+
+All errors are logged to console and displayed to users in a user-friendly format.
 
 ## Important Implementation Details
 
-### Model ID Extraction
-
-The UI shows "🔹 Provider | model-name" but APIs need just "model-name". Always use `extract_model_id()` before API
-calls.
-
-### Import Structure
-
-After recent refactoring, all shared modules are in `src/` directory. Main imports:
-
-```python
-from src.api_service import api_service
-from src.chat_manager import ChatManager, MessageProcessor
-from src.config import get_models_with_provider, extract_model_id, ...
-```
-
 ### Singleton Pattern
 
-`api_service` in `src/api_service.py` is a global singleton - don't create multiple instances.
+`api_service` in `src/api_service.py` is a **global singleton instance**. Do not create multiple
+`MultiProviderAPIService` instances. Always import and use the existing instance:
+```python
+from src.api_service import api_service
+```
 
-### Test Coverage
+### Provider Initialization
 
-All major features have test scripts in `tests/` directory. Run them to verify changes don't break functionality.
+Providers are initialized once during `MultiProviderAPIService.__init__()`. The service prints status messages to
+console:
+
+- `[SUCCESS]` indicates provider is ready
+- `[FAILED]` indicates missing API key or initialization error
+
+### Event Handler Pattern
+
+Gradio event handlers in `main.py` use a two-step pattern for chat:
+
+1. `user_message()`: Adds user input to history, returns updated chatbot
+2. `bot_message()`: Calls API and appends assistant response
+3. `update_status()`: Refreshes provider status display
+
+This separation allows proper UI updates between user input and bot response.
+
+### Test Scripts
+
+All test scripts in `tests/` are standalone and can be run independently. They do not require a running application
+instance.
