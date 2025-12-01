@@ -40,8 +40,9 @@ class BaseProvider(ABC):
             max_tokens: int = None,
             frequency_penalty: float = None,
             presence_penalty: float = None,
+            stream: bool = False,
             **kwargs
-    ) -> str:
+    ):
         """
         调用聊天完成API
 
@@ -54,10 +55,11 @@ class BaseProvider(ABC):
             max_tokens: 最大生成token数
             frequency_penalty: 频率惩罚 (-2.0-2.0)
             presence_penalty: 存在惩罚 (-2.0-2.0)
+            stream: 是否使用流式传输
             **kwargs: 其他参数
 
         Returns:
-            str: API回复内容，或错误信息
+            str: API回复内容（非流式），或生成器（流式）
         """
         pass
 
@@ -95,11 +97,16 @@ class CerebrasProvider(BaseProvider):
             max_tokens: int = None,
             frequency_penalty: float = None,
             presence_penalty: float = None,
+            stream: bool = False,
             **kwargs
-    ) -> str:
+    ):
         """调用Cerebras聊天完成API"""
         if not self.is_available():
-            return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            error_msg = f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         try:
             # 如果有系统提示词，添加到消息列表开头
@@ -111,6 +118,7 @@ class CerebrasProvider(BaseProvider):
             api_params = {
                 "messages": api_messages,
                 "model": model,
+                "stream": stream,
             }
 
             # 添加可选参数
@@ -126,12 +134,23 @@ class CerebrasProvider(BaseProvider):
                 api_params["presence_penalty"] = presence_penalty
 
             chat_completion = self.client.chat.completions.create(**api_params)
-            return chat_completion.choices[0].message.content
+
+            if stream:
+                # 流式传输
+                for chunk in chat_completion:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+            else:
+                # 非流式传输
+                return chat_completion.choices[0].message.content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {str(e)}"
             print(error_msg)
-            return error_msg
+            if stream:
+                yield error_msg
+            else:
+                return error_msg
 
 
 class DeepSeekProvider(BaseProvider):
@@ -171,11 +190,16 @@ class DeepSeekProvider(BaseProvider):
             max_tokens: int = None,
             frequency_penalty: float = None,
             presence_penalty: float = None,
+            stream: bool = False,
             **kwargs
-    ) -> str:
+    ):
         """调用DeepSeek聊天完成API"""
         if not self.is_available():
-            return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            error_msg = f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         try:
             # 如果有系统提示词，添加到消息列表开头
@@ -187,7 +211,7 @@ class DeepSeekProvider(BaseProvider):
             api_params = {
                 "model": model,
                 "messages": api_messages,
-                "stream": False
+                "stream": stream
             }
 
             # 添加可选参数
@@ -203,12 +227,23 @@ class DeepSeekProvider(BaseProvider):
                 api_params["presence_penalty"] = presence_penalty
 
             response = self.client.chat.completions.create(**api_params)
-            return response.choices[0].message.content
+
+            if stream:
+                # 流式传输
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+            else:
+                # 非流式传输
+                return response.choices[0].message.content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {str(e)}"
             print(error_msg)
-            return error_msg
+            if stream:
+                yield error_msg
+            else:
+                return error_msg
 
 
 class OpenAIProvider(BaseProvider):
@@ -248,11 +283,16 @@ class OpenAIProvider(BaseProvider):
             max_tokens: int = None,
             frequency_penalty: float = None,
             presence_penalty: float = None,
+            stream: bool = False,
             **kwargs
-    ) -> str:
+    ):
         """调用OpenAI聊天完成API"""
         if not self.is_available():
-            return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            error_msg = f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         try:
             # 如果有系统提示词，添加到消息列表开头
@@ -264,7 +304,7 @@ class OpenAIProvider(BaseProvider):
             api_params = {
                 "model": model,
                 "messages": api_messages,
-                "stream": False
+                "stream": stream
             }
 
             # 添加可选参数
@@ -280,12 +320,23 @@ class OpenAIProvider(BaseProvider):
                 api_params["presence_penalty"] = presence_penalty
 
             response = self.client.chat.completions.create(**api_params)
-            return response.choices[0].message.content
+
+            if stream:
+                # 流式传输
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+            else:
+                # 非流式传输
+                return response.choices[0].message.content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {str(e)}"
             print(error_msg)
-            return error_msg
+            if stream:
+                yield error_msg
+            else:
+                return error_msg
 
 
 class DashScopeProvider(BaseProvider):
@@ -325,11 +376,16 @@ class DashScopeProvider(BaseProvider):
             max_tokens: int = None,
             frequency_penalty: float = None,
             presence_penalty: float = None,
+            stream: bool = False,
             **kwargs
-    ) -> str:
+    ):
         """调用DashScope聊天完成API"""
         if not self.is_available():
-            return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            error_msg = f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         try:
             # 如果有系统提示词，添加到消息列表开头
@@ -341,7 +397,7 @@ class DashScopeProvider(BaseProvider):
             api_params = {
                 "model": model,
                 "messages": api_messages,
-                "stream": False
+                "stream": stream
             }
 
             # 添加可选参数
@@ -359,12 +415,116 @@ class DashScopeProvider(BaseProvider):
             #     api_params["presence_penalty"] = presence_penalty
 
             response = self.client.chat.completions.create(**api_params)
-            return response.choices[0].message.content
+
+            if stream:
+                # 流式传输
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+            else:
+                # 非流式传输
+                return response.choices[0].message.content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {str(e)}"
             print(error_msg)
+            if stream:
+                yield error_msg
+            else:
+                return error_msg
+
+
+class KimiProvider(BaseProvider):
+    """Kimi（月之暗面）提供商实现"""
+
+    def __init__(self):
+        super().__init__("kimi")
+
+    def _initialize_client(self):
+        """初始化Kimi客户端"""
+        config = get_provider_config(self.provider_name)
+        api_key = config.get("api_key")
+        base_url = config.get("base_url")
+
+        if not api_key:
+            return
+
+        try:
+            self.client = OpenAI(
+                api_key=api_key,
+                base_url=base_url
+            )
+        except Exception as e:
+            print(f"初始化Kimi客户端失败: {e}")
+
+    def is_available(self) -> bool:
+        """检查Kimi服务是否可用"""
+        return self.client is not None
+
+    def chat_completion(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: str = None,
+            temperature: float = None,
+            top_p: float = None,
+            max_tokens: int = None,
+            frequency_penalty: float = None,
+            presence_penalty: float = None,
+            stream: bool = False,
+            **kwargs
+    ):
+        """调用Kimi聊天完成API"""
+        if not self.is_available():
+            error_msg = f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
+            if stream:
+                yield error_msg
+                return
             return error_msg
+
+        try:
+            # 如果有系统提示词，添加到消息列表开头
+            api_messages = messages.copy()
+            if system_instruction:
+                api_messages.insert(0, {"role": "system", "content": system_instruction})
+
+            # 构建API参数
+            api_params = {
+                "model": model,
+                "messages": api_messages,
+                "stream": stream
+            }
+
+            # 添加可选参数
+            if temperature is not None:
+                api_params["temperature"] = temperature
+            if top_p is not None:
+                api_params["top_p"] = top_p
+            if max_tokens is not None:
+                api_params["max_tokens"] = max_tokens
+            if frequency_penalty is not None:
+                api_params["frequency_penalty"] = frequency_penalty
+            if presence_penalty is not None:
+                api_params["presence_penalty"] = presence_penalty
+
+            response = self.client.chat.completions.create(**api_params)
+
+            if stream:
+                # 流式传输
+                for chunk in response:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+            else:
+                # 非流式传输
+                return response.choices[0].message.content
+
+        except Exception as e:
+            error_msg = f"{self.provider_name} API调用失败: {str(e)}"
+            print(error_msg)
+            if stream:
+                yield error_msg
+            else:
+                return error_msg
 
 
 class ProviderFactory:
@@ -374,7 +534,8 @@ class ProviderFactory:
         "cerebras": CerebrasProvider,
         "deepseek": DeepSeekProvider,
         "openai": OpenAIProvider,
-        "dashscope": DashScopeProvider
+        "dashscope": DashScopeProvider,
+        "kimi": KimiProvider
     }
 
     @classmethod

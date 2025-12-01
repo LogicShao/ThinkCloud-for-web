@@ -3,6 +3,8 @@ ThinkCloud for Web - 多提供商 LLM 客户端
 支持深度思考模式的智能对话系统
 """
 
+from datetime import datetime
+
 import gradio as gr
 
 from src.api_service import api_service
@@ -76,6 +78,13 @@ class LLMClient:
 
                     # 模型参数配置
                     gr.Markdown("### ⚙️ 模型参数")
+
+                    # 流式传输控制
+                    enable_streaming = gr.Checkbox(
+                        label="🌊 启用流式传输",
+                        value=True,
+                        info="逐字显示回复内容（更流畅的体验）"
+                    )
 
                     # System Instruction
                     system_instruction = gr.Textbox(
@@ -221,7 +230,7 @@ class LLMClient:
             self._setup_event_handlers(
                 demo, msg, chatbot, provider_dropdown, model_dropdown,
                 submit_btn, clear_btn, export_btn, status_html,
-                system_instruction, temperature, top_p, max_tokens,
+                enable_streaming, system_instruction, temperature, top_p, max_tokens,
                 frequency_penalty, presence_penalty,
                 deep_think_enabled, enable_review, show_thinking_process, max_subtasks
             )
@@ -276,7 +285,7 @@ class LLMClient:
     def _setup_event_handlers(
             self, demo, msg, chatbot, provider_dropdown, model_dropdown,
             submit_btn, clear_btn, export_btn, status_html,
-            system_instruction, temperature, top_p, max_tokens,
+            enable_streaming, system_instruction, temperature, top_p, max_tokens,
             frequency_penalty, presence_penalty,
             deep_think_enabled, enable_review, show_thinking_process, max_subtasks
     ):
@@ -307,12 +316,19 @@ class LLMClient:
             # 添加用户消息到历史
             self.chat_manager.add_message("user", user_msg)
 
-            # 更新Gradio界面
-            new_history = history + [{"role": "user", "content": user_msg}]
+            # 获取当前时间
+            current_time = datetime.now().strftime("%H:%M:%S")
+
+            # 更新Gradio界面，在消息中添加时间戳
+            new_history = history + [{
+                "role": "user",
+                "content": user_msg,
+                "metadata": {"timestamp": current_time, "title": f"🕐 {current_time}"}
+            }]
             return "", new_history
 
         def bot_message(
-                history, model, sys_inst, temp, top_p_val, max_tok,
+                history, model, enable_stream, sys_inst, temp, top_p_val, max_tok,
                 freq_pen, pres_pen, deep_think_mode, review_enabled,
                 show_process, max_tasks
         ):
@@ -333,9 +349,31 @@ class LLMClient:
             # 处理系统提示词（如果为空则使用默认值）
             actual_sys_inst = sys_inst.strip() if sys_inst and sys_inst.strip() else None
 
+            # 获取当前时间
+            start_time = datetime.now()
+            time_str = start_time.strftime("%H:%M:%S")
+
+            def format_duration(duration_seconds):
+                """格式化时间差"""
+                if duration_seconds < 1:
+                    return f"{duration_seconds:.2f}s"
+                elif duration_seconds < 60:
+                    return f"{duration_seconds:.1f}s"
+                else:
+                    minutes = int(duration_seconds // 60)
+                    seconds = int(duration_seconds % 60)
+                    return f"{minutes}m {seconds}s"
+
+            def add_duration_to_response(response, start_time):
+                """在回复内容底部添加响应时间"""
+                end_time = datetime.now()
+                duration = (end_time - start_time).total_seconds()
+                duration_str = format_duration(duration)
+                return f"{response}\n\n---\n⏱️ **响应时间:** {duration_str}"
+
             # 根据模式选择不同的处理方式
             if deep_think_mode:
-                # 深度思考模式
+                # 深度思考模式（暂不支持流式传输）
                 try:
                     orchestrator = DeepThinkOrchestrator(
                         api_service=api_service,
@@ -353,6 +391,21 @@ class LLMClient:
 
                 except Exception as e:
                     response = f"深度思考模式执行失败: {str(e)}\n\n请尝试关闭深度思考模式或检查模型配置。"
+
+                # 添加响应时间
+                response = add_duration_to_response(response, start_time)
+
+                # 添加助手回复到历史
+                self.chat_manager.add_message("assistant", response)
+
+                # 更新Gradio界面（非流式）
+                history.append({
+                    "role": "assistant",
+                    "content": response,
+                    "metadata": {"timestamp": time_str, "title": f"🤖 {time_str}"}
+                })
+                return history
+
             else:
                 # 标准模式
                 # 构建API消息 - 直接使用Gradio的history格式
@@ -364,24 +417,83 @@ class LLMClient:
                             "content": msg["content"]
                         })
 
-                # 调用API，传递所有参数
-                response = api_service.chat_completion(
-                    messages=api_messages,
-                    model=model,
-                    system_instruction=actual_sys_inst,
-                    temperature=temp,
-                    top_p=top_p_val,
-                    max_tokens=int(max_tok) if max_tok else None,
-                    frequency_penalty=freq_pen,
-                    presence_penalty=pres_pen
-                )
+                if enable_stream:
+                    # 流式传输模式
+                    # 先添加一个空的助手消息
+                    history.append({
+                        "role": "assistant",
+                        "content": "",
+                        "metadata": {"timestamp": time_str, "title": f"🤖 {time_str}"}
+                    })
 
-            # 添加助手回复到历史
-            self.chat_manager.add_message("assistant", response)
+                    response_text = ""
+                    try:
+                        # 调用API，启用流式传输
+                        stream_generator = api_service.chat_completion(
+                            messages=api_messages,
+                            model=model,
+                            system_instruction=actual_sys_inst,
+                            temperature=temp,
+                            top_p=top_p_val,
+                            max_tokens=int(max_tok) if max_tok else None,
+                            frequency_penalty=freq_pen,
+                            presence_penalty=pres_pen,
+                            stream=True
+                        )
 
-            # 更新Gradio界面
-            history.append({"role": "assistant", "content": response})
-            return history
+                        # 逐步更新回复
+                        for chunk in stream_generator:
+                            response_text += chunk
+                            # 更新最后一条助手消息
+                            history[-1]["content"] = response_text
+                            yield history
+
+                        # 流式传输完成，添加响应时间
+                        response_text = add_duration_to_response(response_text, start_time)
+                        history[-1]["content"] = response_text
+                        yield history
+
+                    except Exception as e:
+                        error_msg = f"流式传输失败: {str(e)}"
+                        error_msg = add_duration_to_response(error_msg, start_time)
+                        history[-1]["content"] = error_msg
+                        response_text = error_msg
+                        yield history
+
+                    # 添加完整回复到聊天历史管理器
+                    self.chat_manager.add_message("assistant", response_text)
+
+                else:
+                    # 非流式传输模式
+                    try:
+                        # 调用API
+                        response = api_service.chat_completion(
+                            messages=api_messages,
+                            model=model,
+                            system_instruction=actual_sys_inst,
+                            temperature=temp,
+                            top_p=top_p_val,
+                            max_tokens=int(max_tok) if max_tok else None,
+                            frequency_penalty=freq_pen,
+                            presence_penalty=pres_pen,
+                            stream=False
+                        )
+                    except Exception as e:
+                        response = f"API调用失败: {str(e)}"
+
+                    # 添加响应时间
+                    response = add_duration_to_response(response, start_time)
+
+                    # 添加助手回复到历史
+                    self.chat_manager.add_message("assistant", response)
+
+                    # 更新Gradio界面
+                    history.append({
+                        "role": "assistant",
+                        "content": response,
+                        "metadata": {"timestamp": time_str, "title": f"🤖 {time_str}"}
+                    })
+                    return history
 
         def clear_conversation():
             """清除对话"""
@@ -419,7 +531,7 @@ class LLMClient:
             queue=False
         ).then(
             bot_message,
-            [chatbot, model_dropdown, system_instruction, temperature, top_p, max_tokens,
+            [chatbot, model_dropdown, enable_streaming, system_instruction, temperature, top_p, max_tokens,
              frequency_penalty, presence_penalty, deep_think_enabled, enable_review,
              show_thinking_process, max_subtasks],
             [chatbot]
@@ -436,7 +548,7 @@ class LLMClient:
             queue=False
         ).then(
             bot_message,
-            [chatbot, model_dropdown, system_instruction, temperature, top_p, max_tokens,
+            [chatbot, model_dropdown, enable_streaming, system_instruction, temperature, top_p, max_tokens,
              frequency_penalty, presence_penalty, deep_think_enabled, enable_review,
              show_thinking_process, max_subtasks],
             [chatbot]

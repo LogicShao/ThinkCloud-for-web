@@ -58,6 +58,7 @@ class MultiProviderAPIService:
             max_tokens=None,
             frequency_penalty=None,
             presence_penalty=None,
+            stream=False,
             **kwargs
     ):
         """
@@ -72,27 +73,40 @@ class MultiProviderAPIService:
             max_tokens: 最大生成token数
             frequency_penalty: 频率惩罚
             presence_penalty: 存在惩罚
+            stream: 是否使用流式传输
             **kwargs: 其他参数
 
         Returns:
-            str: API回复内容，或错误信息
+            str: API回复内容（非流式），或生成器（流式）
         """
         # 根据模型确定提供商
         provider_name = get_model_provider(model)
 
         if not provider_name:
-            return f"错误: 不支持模型 '{model}'。请检查模型名称是否正确。"
+            error_msg = f"错误: 不支持模型 '{model}'。请检查模型名称是否正确。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         if provider_name not in self.providers:
-            return f"错误: 提供商 '{provider_name}' 未配置或不可用。请检查{provider_name.upper()}_API_KEY环境变量。"
+            error_msg = f"错误: 提供商 '{provider_name}' 未配置或不可用。请检查{provider_name.upper()}_API_KEY环境变量。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         provider = self.providers[provider_name]
 
         if not provider.is_available():
-            return f"错误: {provider_name} 提供商不可用。请检查配置。"
+            error_msg = f"错误: {provider_name} 提供商不可用。请检查配置。"
+            if stream:
+                yield error_msg
+                return
+            return error_msg
 
         try:
-            return provider.chat_completion(
+            result = provider.chat_completion(
                 messages=messages,
                 model=model,
                 system_instruction=system_instruction,
@@ -101,13 +115,24 @@ class MultiProviderAPIService:
                 max_tokens=max_tokens,
                 frequency_penalty=frequency_penalty,
                 presence_penalty=presence_penalty,
+                stream=stream,
                 **kwargs
             )
+
+            if stream:
+                # 流式传输 - 直接传递生成器
+                yield from result
+            else:
+                # 非流式传输 - 直接返回结果
+                return result
 
         except Exception as e:
             error_msg = f"{provider_name} API调用失败: {str(e)}"
             print(error_msg)
-            return error_msg
+            if stream:
+                yield error_msg
+            else:
+                return error_msg
 
     def get_provider_status(self):
         """获取所有提供商的状态信息"""

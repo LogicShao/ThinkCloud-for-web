@@ -31,6 +31,11 @@ PROVIDER_CONFIG = {
         "api_key": os.environ.get("DASHSCOPE_API_KEY"),
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         "enabled": True
+    },
+    "kimi": {
+        "api_key": os.environ.get("KIMI_API_KEY"),
+        "base_url": "https://api.moonshot.cn/v1",
+        "enabled": True
     }
 }
 
@@ -74,12 +79,24 @@ PROVIDER_MODELS = {
         "qwen2-72b-instruct",
         "qwen2-1.5b-instruct",
         "qwen2-57b-a14b-instruct"
+    ],
+    "kimi": [
+        # V1 系列 - 支持不同上下文长度
+        "moonshot-v1-8k",
+        "moonshot-v1-32k",
+        "moonshot-v1-128k",
+
+        # K2 系列 - 最新版本
+        "kimi-k2-0905-preview",  # 最新版本，256K 上下文
+        "kimi-k2-turbo-preview",  # 高速版本，60-100 Tokens/s
+        "kimi-k2-thinking",  # 长思考模型，256K 上下文
+        "kimi-k2-thinking-turbo"  # 长思考高速版本
     ]
 }
 
 # 默认提供商和模型
-DEFAULT_PROVIDER = "cerebras"
-DEFAULT_MODEL = "qwen-3-235b-a22b-thinking-2507"
+DEFAULT_PROVIDER = "deepseek"
+DEFAULT_MODEL = "deepseek-chat"
 
 # 服务器配置
 SERVER_HOST = "0.0.0.0"
@@ -94,7 +111,8 @@ PROVIDER_DISPLAY_NAMES = {
     "cerebras": "Cerebras",
     "deepseek": "DeepSeek",
     "openai": "OpenAI",
-    "dashscope": "DashScope"
+    "dashscope": "DashScope",
+    "kimi": "Kimi"
 }
 
 
