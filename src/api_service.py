@@ -48,13 +48,31 @@ class MultiProviderAPIService:
         """获取可用的提供商列表"""
         return list(self.providers.keys())
 
-    def chat_completion(self, messages, model):
+    def chat_completion(
+            self,
+            messages,
+            model,
+            system_instruction=None,
+            temperature=None,
+            top_p=None,
+            max_tokens=None,
+            frequency_penalty=None,
+            presence_penalty=None,
+            **kwargs
+    ):
         """
         调用聊天完成API
 
         Args:
             messages: 消息列表
             model: 模型名称
+            system_instruction: 系统提示词
+            temperature: 温度参数
+            top_p: 核采样参数
+            max_tokens: 最大生成token数
+            frequency_penalty: 频率惩罚
+            presence_penalty: 存在惩罚
+            **kwargs: 其他参数
 
         Returns:
             str: API回复内容，或错误信息
@@ -74,7 +92,17 @@ class MultiProviderAPIService:
             return f"错误: {provider_name} 提供商不可用。请检查配置。"
 
         try:
-            return provider.chat_completion(messages, model)
+            return provider.chat_completion(
+                messages=messages,
+                model=model,
+                system_instruction=system_instruction,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                frequency_penalty=frequency_penalty,
+                presence_penalty=presence_penalty,
+                **kwargs
+            )
 
         except Exception as e:
             error_msg = f"{provider_name} API调用失败: {str(e)}"

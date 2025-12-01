@@ -318,3 +318,46 @@ def get_server_port(preferred_port=SERVER_PORT, host=SERVER_HOST):
         # 实在找不到，返回None让系统随机分配
         print("[WARN] 未找到可用端口，将使用系统随机分配的端口")
         return None
+
+
+# 模型参数默认配置
+MODEL_PARAMETERS = {
+    "temperature": {
+        "default": 0.7,
+        "min": 0.0,
+        "max": 2.0,
+        "step": 0.1,
+        "description": "控制生成文本的随机性。值越高，输出越随机；值越低，输出越确定"
+    },
+    "top_p": {
+        "default": 0.9,
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05,
+        "description": "核采样参数。控制考虑的词汇范围"
+    },
+    "max_tokens": {
+        "default": 2048,
+        "min": 1,
+        "max": 32768,
+        "step": 256,
+        "description": "生成的最大token数量"
+    },
+    "frequency_penalty": {
+        "default": 0.0,
+        "min": -2.0,
+        "max": 2.0,
+        "step": 0.1,
+        "description": "降低重复词汇的频率。正值减少重复，负值增加重复"
+    },
+    "presence_penalty": {
+        "default": 0.0,
+        "min": -2.0,
+        "max": 2.0,
+        "step": 0.1,
+        "description": "鼓励模型谈论新主题。正值增加话题多样性"
+    }
+}
+
+# 默认系统提示词
+DEFAULT_SYSTEM_INSTRUCTION = "你是一个有帮助、诚实且无害的 AI 助手。"

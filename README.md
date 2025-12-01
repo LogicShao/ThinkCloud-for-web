@@ -1,16 +1,42 @@
-# 多提供商 LLM 客户端
+# 🚀 ThinkCloud for Web
 
-一个基于Gradio的多提供商LLM聊天客户端，支持Cerebras、DeepSeek和OpenAI等多种AI提供商。
+一个基于 Gradio 的多提供商 LLM 聊天客户端，支持 Cerebras、DeepSeek、OpenAI 和 DashScope (阿里云百炼) 等多种 AI 提供商。
 
-## 功能特性
+**✨ 特色功能：🧠 深度思考模式** - 通过多阶段推理系统深入分析复杂问题，自动拆解任务、逐步分析、整合结论并进行质量审查。
 
-- 🚀 支持多个AI提供商（Cerebras、DeepSeek、OpenAI）
-- 🎨 美观的Gradio Web界面
-- 🔄 支持多轮对话历史
-- 📱 响应式设计，支持移动端
-- 🔧 支持多种模型选择
-- ⚡ 实时提供商状态显示
-- 📋 一键复制回复内容
+**⚙️ 高级参数控制** - 支持System Instruction、Temperature、Top P、Max Tokens等全面参数调节。
+
+![Version](https://img.shields.io/badge/version-2.0-blue)
+![Python](https://img.shields.io/badge/python-3.8+-green)
+![License](https://img.shields.io/badge/license-MIT-orange)
+
+## 📋 功能特性
+
+### 核心功能
+
+- 🚀 **多提供商支持** - Cerebras、DeepSeek、OpenAI、DashScope (阿里云百炼)
+- 🎨 **美观的 Gradio Web 界面** - 响应式设计，支持移动端
+- 🔄 **多轮对话历史** - 自动保存对话上下文
+- 🔧 **灵活的模型选择** - 28+ 模型可选，智能提供商切换
+- ⚡ **实时状态监控** - 提供商可用性实时显示
+- 📋 **便捷的内容操作** - 一键复制、导出对话记录
+- ⚙️ **全面参数控制** - System Instruction、Temperature、Top P、Max Tokens 等
+
+### 🧠 深度思考模式（NEW!）
+
+- **四阶段推理流程** - Plan (规划) → Solve (分析) → Synthesize (整合) → Review (审查)
+- **智能任务拆解** - 自动将复杂问题分解为 3-8 个子任务
+- **结构化输出** - 提供详细的思考过程和高质量答案
+- **可配置选项** - 自定义子任务数量、启用/禁用审查、控制详细度
+- **质量保证** - 可选的自我审查机制，提供改进建议
+
+### 技术亮点
+
+- 🏗️ **模块化架构** - 工厂模式、单例模式、清晰的职责分离
+- 🔌 **易于扩展** - 预留工具调用接口（搜索、RAG、代码执行）
+- 🛡️ **健壮的容错** - 多重 JSON 解析策略、自动降级处理
+- 📊 **详细的日志** - 完整的执行过程追踪
+- 🚦 **自动端口管理** - 智能检测并使用可用端口
 
 ## 支持的提供商和模型
 
@@ -133,22 +159,105 @@ python main.py
 
 应用将在 `http://localhost:7860` 启动，并自动在默认浏览器中打开。
 
-## 使用说明
+## 📖 使用说明
 
-1. **配置API密钥**：确保已正确设置至少一个提供商的API密钥
-2. **选择模型**：从下拉菜单中选择要使用的LLM模型（系统会自动选择对应的提供商）
-3. **开始对话**：在输入框中输入问题，点击"发送"或按Enter键
-4. **查看历史**：所有对话历史都会保存在聊天界面中
-5. **清除对话**：点击"清除对话"按钮可以重置对话历史
+### 基础对话模式
 
-## 界面说明
+1. **配置 API 密钥**：确保已正确设置至少一个提供商的 API 密钥
+2. **选择提供商**：从左侧面板的"选择提供商"下拉菜单中选择
+3. **选择模型**：根据提供商自动显示可用模型列表
+4. **开始对话**：在输入框中输入问题，点击"🚀 发送"或按 Enter 键
+5. **查看历史**：所有对话历史都会保存在聊天界面中
+6. **导出对话**：点击"📥 导出对话"按钮保存对话记录
+7. **清除对话**：点击"🗑️ 清除对话"按钮重置对话历史
 
-- **模型选择**：选择不同的LLM模型（支持Cerebras、DeepSeek、OpenAI）
-- **聊天界面**：显示对话历史，支持复制回复
-- **输入框**：输入您的问题
-- **发送按钮**：提交问题
-- **清除按钮**：重置对话历史
-- **状态栏**：显示所有提供商的状态信息
+### 🧠 深度思考模式
+
+**适用场景**：
+
+- ✅ 复杂分析问题（如"分析某公司的商业模式优劣势"）
+- ✅ 多角度综合问题（如"从经济、社会、技术角度分析某现象"）
+- ✅ 设计规划问题（如"设计一个在线教育平台"）
+- ✅ 深度研究问题（如"量子计算的发展现状和未来趋势"）
+
+**使用步骤**：
+
+1. **启用深度思考**
+    - 在左侧控制面板找到 **"🧠 深度思考模式"** 区域
+    - 勾选 **"启用深度思考"** 复选框
+
+2. **配置选项**（可选）
+    - 点击 **"高级选项"** 展开配置面板
+    - **启用自我审查**：对最终答案进行质量检查（推荐）
+    - **显示思考过程**：展示详细的推理步骤
+    - **最大子任务数**：调整问题拆解的粒度（3-8，默认 6）
+
+3. **提问并等待**
+    - 输入您的复杂问题
+    - 系统将自动执行：规划 → 分析 → 整合 → 审查
+    - 等待时间约 30-180 秒（取决于模型速度和配置）
+
+4. **查看结果**
+    - **💡 深度思考结果**：结构化的最终答案
+    - **🧠 思考过程摘要**：问题拆解和各阶段分析
+    - **🔍 质量审查**：发现的问题和改进建议（如启用）
+    - **统计信息**：LLM 调用次数、各子任务置信度
+
+**配置建议**：
+
+| 场景    | 模型推荐                             | 子任务数 | 启用审查 | 预计时间     |
+|-------|----------------------------------|------|------|----------|
+| 快速探索  | `llama-3.3-70b`                  | 3-4  | ❌    | 30-60s   |
+| 深度分析  | `qwen-3-235b-a22b-thinking-2507` | 5-6  | ✅    | 60-120s  |
+| 专业级输出 | `gpt-4o`                         | 6-8  | ✅    | 120-180s |
+
+**示例问题**：
+
+```
+问题：请从技术架构、用户体验和商业模式三个角度，
+     深入分析抖音和快手的差异与竞争策略。
+
+深度思考模式将自动：
+1. 规划：拆解为技术、UX、商业三个分析维度
+2. 分析：逐个深入研究每个维度
+3. 整合：综合三个维度生成连贯答案
+4. 审查：检查答案质量并提供改进建议
+```
+
+**性能参考**：
+
+- **LLM 调用次数**：5-9 次（1 规划 + N 分析 + 1 整合 + 1 审查）
+- **Token 消耗**：约 12,000 tokens/次
+- **成本估算**：< $0.01/次（基于 Cerebras）
+
+详细文档请参考：
+
+- 📘 [深度思考功能完整文档](doc/deep_thinking_feature.md)
+- 🚀 [快速开始指南](doc/deep_thinking_quickstart.md)
+
+## 🖥️ 界面说明
+
+### 左侧控制面板
+
+- **🏢 选择提供商**：选择 AI 服务提供商（Cerebras、DeepSeek、OpenAI、DashScope）
+- **🤖 选择模型**：根据提供商自动显示可用模型
+- **📊 系统状态**：实时显示可用提供商和对话轮数
+- **⚙️ 模型参数**：
+    - 📝 System Instruction（系统提示词）
+    - 🌡️ Temperature（温度）
+    - 🔧 高级参数（Top P、Max Tokens、频率/存在惩罚）
+- **🧠 深度思考模式**：
+    - 启用深度思考开关
+    - 高级选项（审查、思考过程、子任务数）
+- **💡 功能提示**：快速参考指南
+
+### 右侧聊天区域
+
+- **💬 对话界面**：显示对话历史，支持复制每条消息
+- **✍️ 输入消息**：输入您的问题（支持多行输入）
+- **🚀 发送按钮**：提交问题
+- **🗑️ 清除对话**：重置对话历史
+- **📥 导出对话**：保存对话记录
 
 ## 故障排除
 
@@ -170,24 +279,174 @@ python main.py
     - 错误信息："Address already in use"
     - 解决方案：修改 `main.py` 中的 `server_port` 参数
 
+## 🧪 测试
+
+### 运行测试
+
+```bash
+# 测试 UI 组件
+python tests/test_ui.py
+
+# 测试端口查找功能
+python tests/test_port_finder.py
+
+# 测试模型选择器
+python tests/test_model_selector.py
+
+# 测试深度思考模块
+python tests/test_deep_think.py
+
+# 运行特定的深度思考测试
+python tests/test_deep_think.py --test basic      # 基础功能测试
+python tests/test_deep_think.py --test no-review  # 无审查模式测试
+python tests/test_deep_think.py --test format     # 输出格式化测试
+```
+
+### 语法验证
+
+```bash
+# 验证所有源文件语法
+python -m py_compile main.py src/*.py
+```
+
+## 📁 项目结构
+
+```
+SimpleLLMFront/
+├── src/                          # 源代码模块
+│   ├── api_service.py            # 多提供商 API 编排（单例模式）
+│   ├── chat_manager.py           # 对话历史管理
+│   ├── config.py                 # 配置、提供商/模型映射、端口工具
+│   ├── providers.py              # 提供商实现（工厂模式）
+│   └── deep_think.py             # 深度思考编排器（多阶段推理）
+├── main.py                       # Gradio UI 和应用入口
+├── tests/                        # 测试脚本
+│   ├── test_ui.py                # UI 组件测试
+│   ├── test_port_finder.py       # 端口管理测试
+│   ├── test_model_selector.py    # 模型选择器测试
+│   └── test_deep_think.py        # 深度思考模块测试
+├── doc/                          # 功能文档
+│   ├── deep_thinking_feature.md  # 深度思考完整文档
+│   └── deep_thinking_quickstart.md # 深度思考快速开始
+├── .env                          # API 密钥配置（gitignored）
+├── .env.example                  # 环境变量示例
+├── requirements.txt              # 依赖列表
+├── CLAUDE.md                     # Claude Code 项目指南
+└── README.md                     # 本文件
+```
+
 ### 开发说明
 
-- 主要文件：`main.py`
-- 提供商管理：`providers.py`
-- API服务：`api_service.py`
-- 配置管理：`config.py`
-- 依赖管理：`requirements.txt`
-- 环境配置：通过 `.env` 文件（使用python-dotenv）或环境变量
-- 示例配置：`.env.example`
+- **主应用**：`main.py` - Gradio 界面和事件处理
+- **提供商管理**：`src/providers.py` - 抽象基类和具体实现
+- **API 服务**：`src/api_service.py` - 多提供商编排（全局单例）
+- **深度思考**：`src/deep_think.py` - 多阶段推理编排器
+- **配置管理**：`src/config.py` - 提供商配置、模型映射、端口工具
+- **对话管理**：`src/chat_manager.py` - 历史记录和消息处理
+- **依赖管理**：`requirements.txt`
+- **环境配置**：`.env` 文件（使用 python-dotenv）
 
-## 技术栈
+## 🛠️ 技术栈
 
-- **前端框架**：Gradio
-- **后端API**：Cerebras Cloud SDK、OpenAI SDK
-- **提供商架构**：抽象工厂模式
+- **前端框架**：Gradio 4.x
+- **后端 SDK**：
+    - Cerebras Cloud SDK
+    - OpenAI SDK（用于 DeepSeek、OpenAI、DashScope）
+- **架构模式**：
+    - 工厂模式（Provider Factory）
+    - 单例模式（API Service）
+    - 策略模式（Deep Thinking Orchestrator）
+- **数据结构**：Python dataclass
 - **环境管理**：python-dotenv
-- **Python版本**：3.8+
+- **日志系统**：Python logging
+- **Python 版本**：3.8+
 
-## 许可证
+## 🌟 核心架构
 
-MIT License
+### 提供商架构
+
+```python
+BaseProvider(抽象基类)
+↓
+├── CerebrasProvider  # Cerebras Cloud SDK
+├── DeepSeekProvider  # OpenAI SDK + DeepSeek endpoint
+├── OpenAIProvider  # OpenAI SDK
+└── DashScopeProvider  # OpenAI SDK + 阿里云 endpoint
+```
+
+### 深度思考流程
+
+```
+用户问题
+    ↓
+DeepThinkOrchestrator
+    ↓
+Plan (规划) → Solve (分析) → Synthesize (整合) → Review (审查)
+    ↓                 ↓                 ↓              ↓
+  拆解子任务      逐个深入分析      整合所有结论    质量检查
+    ↓
+格式化输出 → 用户
+```
+
+## 🔮 未来规划
+
+### 短期计划
+
+- [ ] 添加流式输出支持（实时显示思考过程）
+- [ ] 支持对话中途切换深度思考模式
+- [ ] 优化深度思考的 Prompt 模板
+- [ ] 添加更多预设的深度思考场景
+
+### 中期计划
+
+- [ ] 集成外部工具（搜索引擎、RAG、代码执行）
+- [ ] 实现异步执行提升性能
+- [ ] 添加思考过程可视化（流程图）
+- [ ] 支持自定义 Prompt 模板
+
+### 长期计划
+
+- [ ] 多模态支持（图片、文档分析）
+- [ ] 对话式深度思考（中途用户介入）
+- [ ] 思考过程缓存和复用
+- [ ] 分布式深度思考（多模型协作）
+
+## 🤝 贡献指南
+
+欢迎贡献代码、报告问题或提出建议！
+
+1. Fork 本仓库
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启一个 Pull Request
+
+### 代码风格
+
+- 遵循 PEP 8 规范
+- 使用类型注解
+- 编写清晰的文档字符串
+- 添加必要的测试
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 LICENSE 文件
+
+## 📞 联系方式
+
+- **Issues**: [GitHub Issues](https://github.com/LogicShao/SimpleLLMFrontend/issues)
+- **文档**: [完整文档](doc/)
+- **快速开始**: [深度思考快速指南](doc/deep_thinking_quickstart.md)
+
+## 🙏 致谢
+
+感谢以下 AI 提供商的支持：
+
+- [Cerebras](https://cloud.cerebras.ai/) - 超快推理速度
+- [DeepSeek](https://platform.deepseek.com/) - 强大的中文能力
+- [OpenAI](https://platform.openai.com/) - 业界领先的 GPT 系列
+- [DashScope (阿里云百炼)](https://dashscope.aliyuncs.com/) - 通义千问系列模型
+
+---
+
+**⭐ 如果这个项目对您有帮助，请给我们一个 Star！**

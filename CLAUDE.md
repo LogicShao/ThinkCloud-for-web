@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 A multi-provider LLM chat client built with Gradio supporting Cerebras, DeepSeek, OpenAI, and DashScope (Alibaba Cloud).
-Features a clean Gradio interface with intelligent model selection and automatic port management.
+Features a clean Gradio interface with intelligent model selection, automatic port management, and **Deep Thinking Mode
+** for complex multi-stage reasoning.
 
 ## Project Structure
 
@@ -15,13 +16,16 @@ SimpleLLMFront/
 │   ├── api_service.py      # Multi-provider API orchestration (singleton pattern)
 │   ├── chat_manager.py     # Conversation history management
 │   ├── config.py           # Configuration, provider/model mappings, port utilities
-│   └── providers.py        # Provider implementations (factory pattern)
+│   ├── providers.py        # Provider implementations (factory pattern)
+│   └── deep_think.py       # Deep thinking orchestrator for multi-stage reasoning
 ├── main.py                 # Gradio UI and application entry point
 ├── tests/                  # Test scripts
 │   ├── test_ui.py          # UI component tests
 │   ├── test_port_finder.py # Port management tests
-│   └── test_model_selector.py # Model selector tests
+│   ├── test_model_selector.py # Model selector tests
+│   └── test_deep_think.py  # Deep thinking module tests
 ├── doc/                    # Feature documentation
+│   └── deep_thinking_feature.md # Deep thinking mode documentation
 └── .env                    # API keys (gitignored)
 ```
 
@@ -59,6 +63,12 @@ python tests/test_port_finder.py
 # Test model selector with provider info
 python tests/test_model_selector.py
 
+# Test deep thinking module
+python tests/test_deep_think.py
+python tests/test_deep_think.py --test basic      # Basic functionality test
+python tests/test_deep_think.py --test no-review  # Test without review mode
+python tests/test_deep_think.py --test format     # Test output formatting
+
 # Syntax validation (all source files)
 python -m py_compile main.py src/*.py
 ```
@@ -69,6 +79,10 @@ python -m py_compile main.py src/*.py
 
 - **MultiProviderAPIService** (`src/api_service.py`): Singleton service managing multiple AI providers. Routes requests
   based on model selection and initializes all available providers on startup.
+
+- **DeepThinkOrchestrator** (`src/deep_think.py`): Multi-stage reasoning orchestrator that breaks down complex questions
+  into subtasks, analyzes each systematically, synthesizes results, and optionally reviews the final answer. Supports
+  configurable depth (3-8 subtasks) and optional quality review.
 
 - **Provider Factory Pattern** (`src/providers.py`): Abstract `BaseProvider` class with concrete implementations:
     - `CerebrasProvider`: Uses Cerebras Cloud SDK
@@ -92,6 +106,11 @@ python -m py_compile main.py src/*.py
     - Real-time provider status display
     - Message history with copy buttons
     - Export conversation functionality
+  - Deep thinking mode controls:
+      - Enable/disable deep thinking
+      - Toggle self-review
+      - Show/hide thinking process
+      - Adjust max subtasks (3-8)
 
 ### Model Selection Flow
 
@@ -213,6 +232,86 @@ The application provides clear error messages for common issues:
 - **Failed API calls**: Returns descriptive error strings displayed directly in chat interface
 - **Port conflicts**: Automatically scans for alternative ports with console notifications
 - **Provider unavailability**: Gracefully handled with status indicators in UI
+
+All errors are logged to console and displayed to users in a user-friendly format.
+
+## Deep Thinking Mode
+
+The application includes a sophisticated deep thinking system for complex problem-solving:
+
+### Features
+
+1. **Four-Stage Reasoning Pipeline**:
+    - **Plan**: Clarifies question and breaks it into 3-8 subtasks
+    - **Solve**: Analyzes each subtask with context from previous results
+    - **Synthesize**: Integrates all conclusions into a coherent answer
+    - **Review** (optional): Self-critiques the final answer for quality
+
+2. **Configurable Options**:
+    - Enable/disable deep thinking mode
+    - Toggle quality review stage
+    - Show/hide detailed thinking process
+    - Adjust maximum subtasks (3-8)
+
+3. **Structured Data Models** (using dataclasses):
+    - `Plan`: Clarified question, subtasks, reasoning approach
+    - `SubtaskResult`: Analysis, conclusion, confidence, limitations
+    - `DeepThinkResult`: Complete thinking session with all stages
+    - `ReviewResult`: Quality assessment and improvement suggestions
+
+### Usage
+
+**Via UI**:
+
+1. Check "启用深度思考" (Enable Deep Thinking) in left panel
+2. Optionally adjust settings in "高级选项" (Advanced Options) accordion
+3. Ask your question as usual
+
+**Via Code**:
+
+```python
+from src.deep_think import DeepThinkOrchestrator, format_deep_think_result
+
+orchestrator = DeepThinkOrchestrator(
+    api_service=api_service,
+    model="qwen-3-235b-a22b-thinking-2507",
+    max_subtasks=6,
+    enable_review=True
+)
+
+result = orchestrator.run("Your complex question here")
+formatted = format_deep_think_result(result, include_process=True)
+```
+
+### When to Use
+
+**Recommended for**:
+
+- Complex analytical questions requiring multiple perspectives
+- Problems needing structured breakdown (e.g., "design a system for X")
+- Research-oriented questions
+- Multi-faceted comparisons or evaluations
+
+**Not recommended for**:
+
+- Simple factual queries
+- Quick yes/no questions
+- Creative writing tasks (poetry, stories)
+
+### Performance
+
+- **LLM Calls**: 5-9 calls per deep thinking session (1 plan + N solve + 1 synthesize + 1 review)
+- **Response Time**: 30-180 seconds depending on model speed
+- **Cost**: ~12,000 tokens per session (varies by question complexity)
+
+### Extensibility
+
+The system includes extension points for future tool integration:
+
+- `SubtaskResult.needs_external_info`: Flag for external data needs
+- `SubtaskResult.suggested_tools`: Recommended tools (search, RAG, code execution)
+
+See `doc/deep_thinking_feature.md` for comprehensive documentation.
 
 All errors are logged to console and displayed to users in a user-friendly format.
 

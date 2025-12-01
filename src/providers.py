@@ -30,13 +30,31 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    def chat_completion(self, messages: List[Dict], model: str) -> str:
+    def chat_completion(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: str = None,
+            temperature: float = None,
+            top_p: float = None,
+            max_tokens: int = None,
+            frequency_penalty: float = None,
+            presence_penalty: float = None,
+            **kwargs
+    ) -> str:
         """
         调用聊天完成API
 
         Args:
             messages: 消息列表
             model: 模型名称
+            system_instruction: 系统提示词
+            temperature: 温度参数 (0.0-2.0)
+            top_p: 核采样参数 (0.0-1.0)
+            max_tokens: 最大生成token数
+            frequency_penalty: 频率惩罚 (-2.0-2.0)
+            presence_penalty: 存在惩罚 (-2.0-2.0)
+            **kwargs: 其他参数
 
         Returns:
             str: API回复内容，或错误信息
@@ -67,16 +85,47 @@ class CerebrasProvider(BaseProvider):
         """检查Cerebras服务是否可用"""
         return self.client is not None
 
-    def chat_completion(self, messages: List[Dict], model: str) -> str:
+    def chat_completion(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: str = None,
+            temperature: float = None,
+            top_p: float = None,
+            max_tokens: int = None,
+            frequency_penalty: float = None,
+            presence_penalty: float = None,
+            **kwargs
+    ) -> str:
         """调用Cerebras聊天完成API"""
         if not self.is_available():
             return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
 
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=messages,
-                model=model,
-            )
+            # 如果有系统提示词，添加到消息列表开头
+            api_messages = messages.copy()
+            if system_instruction:
+                api_messages.insert(0, {"role": "system", "content": system_instruction})
+
+            # 构建API参数
+            api_params = {
+                "messages": api_messages,
+                "model": model,
+            }
+
+            # 添加可选参数
+            if temperature is not None:
+                api_params["temperature"] = temperature
+            if top_p is not None:
+                api_params["top_p"] = top_p
+            if max_tokens is not None:
+                api_params["max_tokens"] = max_tokens
+            if frequency_penalty is not None:
+                api_params["frequency_penalty"] = frequency_penalty
+            if presence_penalty is not None:
+                api_params["presence_penalty"] = presence_penalty
+
+            chat_completion = self.client.chat.completions.create(**api_params)
             return chat_completion.choices[0].message.content
 
         except Exception as e:
@@ -112,17 +161,48 @@ class DeepSeekProvider(BaseProvider):
         """检查DeepSeek服务是否可用"""
         return self.client is not None
 
-    def chat_completion(self, messages: List[Dict], model: str) -> str:
+    def chat_completion(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: str = None,
+            temperature: float = None,
+            top_p: float = None,
+            max_tokens: int = None,
+            frequency_penalty: float = None,
+            presence_penalty: float = None,
+            **kwargs
+    ) -> str:
         """调用DeepSeek聊天完成API"""
         if not self.is_available():
             return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
 
         try:
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=False
-            )
+            # 如果有系统提示词，添加到消息列表开头
+            api_messages = messages.copy()
+            if system_instruction:
+                api_messages.insert(0, {"role": "system", "content": system_instruction})
+
+            # 构建API参数
+            api_params = {
+                "model": model,
+                "messages": api_messages,
+                "stream": False
+            }
+
+            # 添加可选参数
+            if temperature is not None:
+                api_params["temperature"] = temperature
+            if top_p is not None:
+                api_params["top_p"] = top_p
+            if max_tokens is not None:
+                api_params["max_tokens"] = max_tokens
+            if frequency_penalty is not None:
+                api_params["frequency_penalty"] = frequency_penalty
+            if presence_penalty is not None:
+                api_params["presence_penalty"] = presence_penalty
+
+            response = self.client.chat.completions.create(**api_params)
             return response.choices[0].message.content
 
         except Exception as e:
@@ -158,17 +238,48 @@ class OpenAIProvider(BaseProvider):
         """检查OpenAI服务是否可用"""
         return self.client is not None
 
-    def chat_completion(self, messages: List[Dict], model: str) -> str:
+    def chat_completion(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: str = None,
+            temperature: float = None,
+            top_p: float = None,
+            max_tokens: int = None,
+            frequency_penalty: float = None,
+            presence_penalty: float = None,
+            **kwargs
+    ) -> str:
         """调用OpenAI聊天完成API"""
         if not self.is_available():
             return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
 
         try:
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=False
-            )
+            # 如果有系统提示词，添加到消息列表开头
+            api_messages = messages.copy()
+            if system_instruction:
+                api_messages.insert(0, {"role": "system", "content": system_instruction})
+
+            # 构建API参数
+            api_params = {
+                "model": model,
+                "messages": api_messages,
+                "stream": False
+            }
+
+            # 添加可选参数
+            if temperature is not None:
+                api_params["temperature"] = temperature
+            if top_p is not None:
+                api_params["top_p"] = top_p
+            if max_tokens is not None:
+                api_params["max_tokens"] = max_tokens
+            if frequency_penalty is not None:
+                api_params["frequency_penalty"] = frequency_penalty
+            if presence_penalty is not None:
+                api_params["presence_penalty"] = presence_penalty
+
+            response = self.client.chat.completions.create(**api_params)
             return response.choices[0].message.content
 
         except Exception as e:
@@ -204,17 +315,50 @@ class DashScopeProvider(BaseProvider):
         """检查DashScope服务是否可用"""
         return self.client is not None
 
-    def chat_completion(self, messages: List[Dict], model: str) -> str:
+    def chat_completion(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: str = None,
+            temperature: float = None,
+            top_p: float = None,
+            max_tokens: int = None,
+            frequency_penalty: float = None,
+            presence_penalty: float = None,
+            **kwargs
+    ) -> str:
         """调用DashScope聊天完成API"""
         if not self.is_available():
             return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
 
         try:
-            response = self.client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=False
-            )
+            # 如果有系统提示词，添加到消息列表开头
+            api_messages = messages.copy()
+            if system_instruction:
+                api_messages.insert(0, {"role": "system", "content": system_instruction})
+
+            # 构建API参数
+            api_params = {
+                "model": model,
+                "messages": api_messages,
+                "stream": False
+            }
+
+            # 添加可选参数
+            if temperature is not None:
+                api_params["temperature"] = temperature
+            if top_p is not None:
+                api_params["top_p"] = top_p
+            if max_tokens is not None:
+                api_params["max_tokens"] = max_tokens
+            # DashScope 可能不支持 frequency_penalty 和 presence_penalty
+            # 如果支持，取消下面的注释
+            # if frequency_penalty is not None:
+            #     api_params["frequency_penalty"] = frequency_penalty
+            # if presence_penalty is not None:
+            #     api_params["presence_penalty"] = presence_penalty
+
+            response = self.client.chat.completions.create(**api_params)
             return response.choices[0].message.content
 
         except Exception as e:

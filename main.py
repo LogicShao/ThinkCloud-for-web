@@ -1,6 +1,6 @@
 """
-多提供商 LLM 客户端 - 主应用文件
-重构版本，支持多个AI提供商和更好的模块化
+ThinkCloud for Web - 多提供商 LLM 客户端
+支持深度思考模式的智能对话系统
 """
 
 import gradio as gr
@@ -9,8 +9,10 @@ from src.api_service import api_service
 from src.chat_manager import ChatManager, MessageProcessor
 from src.config import (
     DEFAULT_MODEL, SERVER_HOST, SERVER_PORT,
-    CHATBOT_HEIGHT, MAX_INPUT_LINES, check_api_key, get_server_port
+    CHATBOT_HEIGHT, MAX_INPUT_LINES, check_api_key, get_server_port,
+    MODEL_PARAMETERS, DEFAULT_SYSTEM_INSTRUCTION
 )
+from src.deep_think import DeepThinkOrchestrator, format_deep_think_result
 
 
 class LLMClient:
@@ -22,7 +24,7 @@ class LLMClient:
 
     def create_interface(self):
         """创建Gradio界面"""
-        with gr.Blocks(title="多提供商 LLM 客户端") as demo:
+        with gr.Blocks(title="ThinkCloud for Web - AI 智能对话") as demo:
             # 标题和描述
             gr.Markdown(self._get_header_markdown())
 
@@ -72,6 +74,95 @@ class LLMClient:
                     gr.Markdown("### 📊 系统状态")
                     status_html = gr.HTML(value=self._get_status_html())
 
+                    # 模型参数配置
+                    gr.Markdown("### ⚙️ 模型参数")
+
+                    # System Instruction
+                    system_instruction = gr.Textbox(
+                        label="📝 系统提示词 (System Instruction)",
+                        placeholder=DEFAULT_SYSTEM_INSTRUCTION,
+                        value="",
+                        lines=3,
+                        max_lines=5,
+                        info="为模型设置角色和行为规范（留空使用默认值）"
+                    )
+
+                    # Temperature 滑块
+                    temperature = gr.Slider(
+                        minimum=MODEL_PARAMETERS["temperature"]["min"],
+                        maximum=MODEL_PARAMETERS["temperature"]["max"],
+                        value=MODEL_PARAMETERS["temperature"]["default"],
+                        step=MODEL_PARAMETERS["temperature"]["step"],
+                        label="🌡️ Temperature（温度）",
+                        info=MODEL_PARAMETERS["temperature"]["description"]
+                    )
+
+                    # 高级参数折叠区
+                    with gr.Accordion("🔧 高级参数", open=False):
+                        top_p = gr.Slider(
+                            minimum=MODEL_PARAMETERS["top_p"]["min"],
+                            maximum=MODEL_PARAMETERS["top_p"]["max"],
+                            value=MODEL_PARAMETERS["top_p"]["default"],
+                            step=MODEL_PARAMETERS["top_p"]["step"],
+                            label="🎯 Top P（核采样）",
+                            info=MODEL_PARAMETERS["top_p"]["description"]
+                        )
+
+                        max_tokens = gr.Slider(
+                            minimum=MODEL_PARAMETERS["max_tokens"]["min"],
+                            maximum=MODEL_PARAMETERS["max_tokens"]["max"],
+                            value=MODEL_PARAMETERS["max_tokens"]["default"],
+                            step=MODEL_PARAMETERS["max_tokens"]["step"],
+                            label="📏 Max Tokens（最大长度）",
+                            info=MODEL_PARAMETERS["max_tokens"]["description"]
+                        )
+
+                        frequency_penalty = gr.Slider(
+                            minimum=MODEL_PARAMETERS["frequency_penalty"]["min"],
+                            maximum=MODEL_PARAMETERS["frequency_penalty"]["max"],
+                            value=MODEL_PARAMETERS["frequency_penalty"]["default"],
+                            step=MODEL_PARAMETERS["frequency_penalty"]["step"],
+                            label="🔁 Frequency Penalty（频率惩罚）",
+                            info=MODEL_PARAMETERS["frequency_penalty"]["description"]
+                        )
+
+                        presence_penalty = gr.Slider(
+                            minimum=MODEL_PARAMETERS["presence_penalty"]["min"],
+                            maximum=MODEL_PARAMETERS["presence_penalty"]["max"],
+                            value=MODEL_PARAMETERS["presence_penalty"]["default"],
+                            step=MODEL_PARAMETERS["presence_penalty"]["step"],
+                            label="✨ Presence Penalty（存在惩罚）",
+                            info=MODEL_PARAMETERS["presence_penalty"]["description"]
+                        )
+
+                    # 深度思考模式配置
+                    gr.Markdown("### 🧠 深度思考模式")
+                    deep_think_enabled = gr.Checkbox(
+                        label="启用深度思考",
+                        value=False,
+                        info="使用多阶段推理深入分析问题"
+                    )
+
+                    with gr.Accordion("高级选项", open=False):
+                        enable_review = gr.Checkbox(
+                            label="启用自我审查",
+                            value=True,
+                            info="对答案进行质量审查"
+                        )
+                        show_thinking_process = gr.Checkbox(
+                            label="显示思考过程",
+                            value=True,
+                            info="展示详细的推理步骤"
+                        )
+                        max_subtasks = gr.Slider(
+                            minimum=3,
+                            maximum=8,
+                            value=6,
+                            step=1,
+                            label="最大子任务数",
+                            info="问题拆解的最大任务数量"
+                        )
+
                     gr.Markdown("""
                     💡 **功能提示**
 
@@ -79,6 +170,7 @@ class LLMClient:
                     • 支持代码高亮
                     • 支持多轮对话
                     • 可随时切换模型
+                    • 🧠 深度思考模式可解决复杂问题
                     """)
 
                 # 右侧聊天区域
@@ -123,12 +215,15 @@ class LLMClient:
                     with gr.Row():
                         clear_btn = gr.Button("🗑️ 清除对话", variant="secondary", size="sm", scale=1)
                         export_btn = gr.Button("📥 导出对话", variant="secondary", size="sm", scale=1)
-                        gr.Markdown("*Powered by Multi-Provider LLM*")
+                        gr.Markdown("*Powered by ThinkCloud*")
 
             # 绑定事件
             self._setup_event_handlers(
                 demo, msg, chatbot, provider_dropdown, model_dropdown,
-                submit_btn, clear_btn, export_btn, status_html
+                submit_btn, clear_btn, export_btn, status_html,
+                system_instruction, temperature, top_p, max_tokens,
+                frequency_penalty, presence_penalty,
+                deep_think_enabled, enable_review, show_thinking_process, max_subtasks
             )
 
         return demo
@@ -136,9 +231,9 @@ class LLMClient:
     def _get_header_markdown(self):
         """获取头部Markdown内容"""
         return """
-        # 🚀 多提供商 AI 聊天客户端
+        # 🚀 ThinkCloud for Web
 
-        探索下一代 AI 对话体验 - 支持多个领先的大语言模型提供商
+        探索下一代 AI 对话体验 - 支持多提供商 + 深度思考模式
 
         ---
 
@@ -146,7 +241,7 @@ class LLMClient:
 
         **⚡ 模型系列:** Llama • Qwen • DeepSeek • GPT
 
-        **✨ 特性:** 快速响应 • 智能切换 • 历史记录
+        **✨ 特性:** 深度思考 • 智能参数调节 • 多轮对话
         """
 
     def _get_initial_status(self):
@@ -180,7 +275,10 @@ class LLMClient:
 
     def _setup_event_handlers(
             self, demo, msg, chatbot, provider_dropdown, model_dropdown,
-            submit_btn, clear_btn, export_btn, status_html
+            submit_btn, clear_btn, export_btn, status_html,
+            system_instruction, temperature, top_p, max_tokens,
+            frequency_penalty, presence_penalty,
+            deep_think_enabled, enable_review, show_thinking_process, max_subtasks
     ):
         """设置事件处理器"""
 
@@ -213,22 +311,70 @@ class LLMClient:
             new_history = history + [{"role": "user", "content": user_msg}]
             return "", new_history
 
-        def bot_message(history, model):
+        def bot_message(
+                history, model, sys_inst, temp, top_p_val, max_tok,
+                freq_pen, pres_pen, deep_think_mode, review_enabled,
+                show_process, max_tasks
+        ):
             """获取机器人回复"""
             if not history:
                 return history
 
-            # 构建API消息 - 直接使用Gradio的history格式
-            api_messages = []
-            for msg in history:
-                if msg["role"] in ["user", "assistant"]:
-                    api_messages.append({
-                        "role": msg["role"],
-                        "content": msg["content"]
-                    })
+            # 获取最后一条用户消息
+            last_user_msg = None
+            for msg in reversed(history):
+                if msg["role"] == "user":
+                    last_user_msg = msg["content"]
+                    break
 
-            # 调用API
-            response = api_service.chat_completion(api_messages, model)
+            if not last_user_msg:
+                return history
+
+            # 处理系统提示词（如果为空则使用默认值）
+            actual_sys_inst = sys_inst.strip() if sys_inst and sys_inst.strip() else None
+
+            # 根据模式选择不同的处理方式
+            if deep_think_mode:
+                # 深度思考模式
+                try:
+                    orchestrator = DeepThinkOrchestrator(
+                        api_service=api_service,
+                        model=model,
+                        max_subtasks=int(max_tasks),
+                        enable_review=review_enabled,
+                        verbose=True
+                    )
+
+                    # TODO: 深度思考也可以传递参数
+                    result = orchestrator.run(last_user_msg)
+
+                    # 格式化结果
+                    response = format_deep_think_result(result, include_process=show_process)
+
+                except Exception as e:
+                    response = f"深度思考模式执行失败: {str(e)}\n\n请尝试关闭深度思考模式或检查模型配置。"
+            else:
+                # 标准模式
+                # 构建API消息 - 直接使用Gradio的history格式
+                api_messages = []
+                for msg in history:
+                    if msg["role"] in ["user", "assistant"]:
+                        api_messages.append({
+                            "role": msg["role"],
+                            "content": msg["content"]
+                        })
+
+                # 调用API，传递所有参数
+                response = api_service.chat_completion(
+                    messages=api_messages,
+                    model=model,
+                    system_instruction=actual_sys_inst,
+                    temperature=temp,
+                    top_p=top_p_val,
+                    max_tokens=int(max_tok) if max_tok else None,
+                    frequency_penalty=freq_pen,
+                    presence_penalty=pres_pen
+                )
 
             # 添加助手回复到历史
             self.chat_manager.add_message("assistant", response)
@@ -273,7 +419,9 @@ class LLMClient:
             queue=False
         ).then(
             bot_message,
-            [chatbot, model_dropdown],
+            [chatbot, model_dropdown, system_instruction, temperature, top_p, max_tokens,
+             frequency_penalty, presence_penalty, deep_think_enabled, enable_review,
+             show_thinking_process, max_subtasks],
             [chatbot]
         ).then(
             update_status,
@@ -288,7 +436,9 @@ class LLMClient:
             queue=False
         ).then(
             bot_message,
-            [chatbot, model_dropdown],
+            [chatbot, model_dropdown, system_instruction, temperature, top_p, max_tokens,
+             frequency_penalty, presence_penalty, deep_think_enabled, enable_review,
+             show_thinking_process, max_subtasks],
             [chatbot]
         ).then(
             update_status,
@@ -316,7 +466,7 @@ class LLMClient:
 
 def main():
     """主函数"""
-    print("[START] 启动 多提供商 LLM 客户端...")
+    print("[START] 启动 ThinkCloud for Web...")
 
     # 检查API配置
     if not check_api_key():
