@@ -2,6 +2,10 @@
 API服务模块 - 处理多提供商API调用
 """
 
+import hashlib
+import threading
+from datetime import datetime, timedelta
+from collections import defaultdict
 from .config import get_model_provider
 from .providers import ProviderFactory
 
@@ -12,6 +16,12 @@ class MultiProviderAPIService:
     def __init__(self):
         self.providers = {}
         self._initialize_providers()
+        # 添加缓存功能
+        self.cache = {}
+        self.cache_lock = threading.Lock()
+        self.cache_ttl = timedelta(minutes=10)  # 缓存有效期10分钟
+        # 性能监控
+        self.metrics = defaultdict(list)
 
     def _initialize_providers(self):
         """初始化所有提供商"""
@@ -48,6 +58,36 @@ class MultiProviderAPIService:
         """获取可用的提供商列表"""
         return list(self.providers.keys())
 
+    def _generate_cache_key(self, messages, model, **kwargs):
+        """生成缓存键"""
+        cache_input = {
+            'messages': messages,
+            'model': model,
+            'system_instruction': kwargs.get('system_instruction'),
+            'temperature': kwargs.get('temperature'),
+            'top_p': kwargs.get('top_p'),
+            'max_tokens': kwargs.get('max_tokens')
+        }
+        cache_str = str(sorted(cache_input.items()))
+        return hashlib.md5(cache_str.encode()).hexdigest()
+
+    def _get_from_cache(self, key):
+        """从缓存获取结果"""
+        with self.cache_lock:
+            if key in self.cache:
+                result, timestamp = self.cache[key]
+                if datetime.now() - timestamp < self.cache_ttl:
+                    return result
+                else:
+                    # 清除过期缓存
+                    del self.cache[key]
+        return None
+
+    def _set_to_cache(self, key, value):
+        """设置缓存"""
+        with self.cache_lock:
+            self.cache[key] = (value, datetime.now())
+
     def chat_completion(
             self,
             messages,
@@ -79,59 +119,102 @@ class MultiProviderAPIService:
         Returns:
             str: API回复内容（非流式），或生成器（流式）
         """
-        # 根据模型确定提供商
-        provider_name = get_model_provider(model)
+        # 流式传输不使用缓存
+        if stream:
+            # 根据模型确定提供商
+            provider_name = get_model_provider(model)
 
-        if not provider_name:
-            error_msg = f"错误: 不支持模型 '{model}'。请检查模型名称是否正确。"
-            if stream:
+            if not provider_name:
+                error_msg = f"错误: 不支持模型 '{model}'。请检查模型名称是否正确。"
                 yield error_msg
                 return
-            return error_msg
 
-        if provider_name not in self.providers:
-            error_msg = f"错误: 提供商 '{provider_name}' 未配置或不可用。请检查{provider_name.upper()}_API_KEY环境变量。"
-            if stream:
+            if provider_name not in self.providers:
+                error_msg = f"错误: 提供商 '{provider_name}' 未配置或不可用。请检查{provider_name.upper()}_API_KEY环境变量。"
                 yield error_msg
                 return
-            return error_msg
 
-        provider = self.providers[provider_name]
+            provider = self.providers[provider_name]
 
-        if not provider.is_available():
-            error_msg = f"错误: {provider_name} 提供商不可用。请检查配置。"
-            if stream:
+            if not provider.is_available():
+                error_msg = f"错误: {provider_name} 提供商不可用。请检查配置。"
                 yield error_msg
                 return
-            return error_msg
 
-        try:
-            result = provider.chat_completion(
-                messages=messages,
-                model=model,
+            try:
+                result = provider.chat_completion(
+                    messages=messages,
+                    model=model,
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_tokens=max_tokens,
+                    frequency_penalty=frequency_penalty,
+                    presence_penalty=presence_penalty,
+                    stream=stream,
+                    **kwargs
+                )
+
+                # 流式传输 - 直接传递生成器
+                yield from result
+            except Exception as e:
+                error_msg = f"{provider_name} API调用失败: {str(e)}"
+                print(error_msg)
+                yield error_msg
+        else:
+            # 非流式传输使用缓存
+            cache_key = self._generate_cache_key(
+                messages, model, 
                 system_instruction=system_instruction,
                 temperature=temperature,
                 top_p=top_p,
-                max_tokens=max_tokens,
-                frequency_penalty=frequency_penalty,
-                presence_penalty=presence_penalty,
-                stream=stream,
-                **kwargs
+                max_tokens=max_tokens
             )
+            
+            # 尝试从缓存获取
+            cached_result = self._get_from_cache(cache_key)
+            if cached_result is not None:
+                print(f"[CACHE] 使用缓存响应")
+                return cached_result
 
-            if stream:
-                # 流式传输 - 直接传递生成器
-                yield from result
-            else:
-                # 非流式传输 - 直接返回结果
+            # 根据模型确定提供商
+            provider_name = get_model_provider(model)
+
+            if not provider_name:
+                error_msg = f"错误: 不支持模型 '{model}'。请检查模型名称是否正确。"
+                return error_msg
+
+            if provider_name not in self.providers:
+                error_msg = f"错误: 提供商 '{provider_name}' 未配置或不可用。请检查{provider_name.upper()}_API_KEY环境变量。"
+                return error_msg
+
+            provider = self.providers[provider_name]
+
+            if not provider.is_available():
+                error_msg = f"错误: {provider_name} 提供商不可用。请检查配置。"
+                return error_msg
+
+            try:
+                result = provider.chat_completion(
+                    messages=messages,
+                    model=model,
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_tokens=max_tokens,
+                    frequency_penalty=frequency_penalty,
+                    presence_penalty=presence_penalty,
+                    stream=stream,
+                    **kwargs
+                )
+
+                # 非流式传输 - 将结果存入缓存
+                self._set_to_cache(cache_key, result)
                 return result
 
-        except Exception as e:
-            error_msg = f"{provider_name} API调用失败: {str(e)}"
-            print(error_msg)
-            if stream:
-                yield error_msg
-            else:
+            except Exception as e:
+                error_msg = f"{provider_name} API调用失败: {str(e)}"
+                print(error_msg)
                 return error_msg
 
     def get_provider_status(self):

@@ -7,6 +7,8 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Dict, Optional, Any
+import threading
+import hashlib
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -238,6 +240,10 @@ class DeepThinkOrchestrator:
         self.temperature = temperature
         self.top_p = top_p
         self.max_tokens = max_tokens
+        
+        # 添加缓存功能
+        self.intermediate_cache = {}
+        self.cache_lock = threading.Lock()
 
     def run(self, question: str) -> DeepThinkResult:
         """
@@ -300,8 +306,36 @@ class DeepThinkOrchestrator:
                 total_llm_calls=self.llm_call_count
             )
 
+    def _get_cache_key(self, method_name: str, *args, **kwargs):
+        """生成缓存键"""
+        cache_input = {
+            'method': method_name,
+            'args': args,
+            'kwargs': {k: v for k, v in kwargs.items() if k != 'self'}
+        }
+        cache_str = str(sorted(cache_input.items()))
+        return hashlib.md5(cache_str.encode()).hexdigest()
+
+    def _get_from_cache(self, key):
+        """从缓存获取结果"""
+        with self.cache_lock:
+            return self.intermediate_cache.get(key)
+
+    def _set_to_cache(self, key, value):
+        """设置缓存"""
+        with self.cache_lock:
+            self.intermediate_cache[key] = value
+
     def _plan(self, question: str) -> Plan:
         """生成任务规划"""
+        # 尝试从缓存获取
+        cache_key = self._get_cache_key('_plan', question)
+        cached_result = self._get_from_cache(cache_key)
+        if cached_result is not None:
+            if self.verbose:
+                logger.info(f"[PLAN] 从缓存获取规划")
+            return cached_result
+
         prompt = PromptTemplates.PLAN_PROMPT.format(question=question)
         response = self._call_llm(prompt, stage=ThinkingStage.PLAN)
 
@@ -318,17 +352,21 @@ class DeepThinkOrchestrator:
                 for st in plan_data.get("subtasks", [])[:self.max_subtasks]
             ]
 
-            return Plan(
+            result = Plan(
                 clarified_question=plan_data.get("clarified_question", question),
                 subtasks=subtasks,
                 plan_text=plan_data.get("plan_text", ""),
                 reasoning_approach=plan_data.get("reasoning_approach", "")
             )
+            
+            # 存储到缓存
+            self._set_to_cache(cache_key, result)
+            return result
 
         except Exception as e:
             logger.warning(f"[PLAN] JSON解析失败,使用默认规划: {e}")
             # 容错: 创建一个默认的简单规划
-            return Plan(
+            result = Plan(
                 clarified_question=question,
                 subtasks=[
                     Subtask(id=1, description="深入理解和分析问题", priority="high"),
@@ -337,6 +375,10 @@ class DeepThinkOrchestrator:
                 ],
                 plan_text="由于规划解析失败,使用默认三阶段分析流程"
             )
+            
+            # 存储到缓存
+            self._set_to_cache(cache_key, result)
+            return result
 
     def _solve_subtask(
             self,

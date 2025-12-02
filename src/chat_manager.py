@@ -4,45 +4,53 @@
 """
 
 from typing import List, Dict, Any
+from collections import deque
+import threading
 
 
 class ChatManager:
     """聊天管理器"""
 
-    def __init__(self):
-        self.history = []
+    def __init__(self, max_history_length=50):
+        self.history = deque(maxlen=max_history_length)  # 限制历史长度
+        self._lock = threading.Lock()  # 线程安全
 
     def add_message(self, role: str, content: str):
         """添加消息到历史"""
-        self.history.append({"role": role, "content": content})
+        with self._lock:
+            self.history.append({"role": role, "content": content})
 
     def get_messages_for_api(self) -> List[Dict[str, str]]:
         """获取用于API调用的消息格式"""
-        return self.history.copy()
+        with self._lock:
+            return list(self.history)
 
     def get_gradio_messages(self) -> List[Dict[str, Any]]:
         """获取Gradio messages格式的消息"""
         gradio_messages = []
-        for msg in self.history:
-            if msg["role"] == "user":
-                gradio_messages.append({
-                    "role": "user",
-                    "content": msg["content"]
-                })
-            elif msg["role"] == "assistant":
-                gradio_messages.append({
-                    "role": "assistant",
-                    "content": msg["content"]
-                })
+        with self._lock:
+            for msg in self.history:
+                if msg["role"] == "user":
+                    gradio_messages.append({
+                        "role": "user",
+                        "content": msg["content"]
+                    })
+                elif msg["role"] == "assistant":
+                    gradio_messages.append({
+                        "role": "assistant",
+                        "content": msg["content"]
+                    })
         return gradio_messages
 
     def clear_history(self):
         """清空对话历史"""
-        self.history.clear()
+        with self._lock:
+            self.history.clear()
 
     def get_history_length(self) -> int:
         """获取历史消息数量"""
-        return len(self.history)
+        with self._lock:
+            return len(self.history)
 
 
 class MessageProcessor:
