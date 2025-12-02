@@ -6,11 +6,11 @@ import os
 import sys
 
 # 添加项目根目录到 Python 路径
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.api_service import api_service
-from src.deep_think import DeepThinkOrchestrator, format_deep_think_result
 from src.config import DEFAULT_MODEL
+from src.deep_think import DeepThinkOrchestrator, format_deep_think_result
 
 
 def test_basic_deep_think():
@@ -34,14 +34,14 @@ def test_basic_deep_think():
         model=DEFAULT_MODEL,
         max_subtasks=4,
         enable_review=True,
-        verbose=True
+        verbose=True,
     )
 
     # 测试问题
     test_questions = [
         "什么是人工智能?请从历史、技术和应用三个角度分析。",
         "如何提高编程技能?",
-        "气候变化的主要原因是什么?"
+        "气候变化的主要原因是什么?",
     ]
 
     # 选择一个问题测试
@@ -61,7 +61,7 @@ def test_basic_deep_think():
         print("=" * 60)
 
         # 打印统计信息
-        print(f"\n[STATS] 统计信息:")
+        print("\n[STATS] 统计信息:")
         print(f"  - 子任务数量: {len(result.subtask_results)}")
         print(f"  - LLM调用次数: {result.total_llm_calls}")
         if result.review:
@@ -74,6 +74,7 @@ def test_basic_deep_think():
     except Exception as e:
         print(f"\n[ERROR] 测试失败: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -92,7 +93,7 @@ def test_without_review():
         model=DEFAULT_MODEL,
         max_subtasks=3,
         enable_review=False,  # 禁用审查
-        verbose=True
+        verbose=True,
     )
 
     question = "Python和JavaScript有什么主要区别?"
@@ -102,10 +103,10 @@ def test_without_review():
     try:
         result = orchestrator.run(question)
 
-        print(f"\n[RESULT] 答案预览:")
+        print("\n[RESULT] 答案预览:")
         print(result.final_answer[:300] + "...")
 
-        print(f"\n[STATS] 统计:")
+        print("\n[STATS] 统计:")
         print(f"  - 子任务数: {len(result.subtask_results)}")
         print(f"  - LLM调用: {result.total_llm_calls}")
         print(f"  - 审查结果: {result.review}")
@@ -123,21 +124,16 @@ def test_format_output():
     print("=" * 60)
 
     # 创建一个模拟的结果对象
-    from src.deep_think import (
-        DeepThinkResult, Plan, Subtask, SubtaskResult, ReviewResult
-    )
+    from src.deep_think import DeepThinkResult, Plan, ReviewResult, Subtask, SubtaskResult
 
     mock_result = DeepThinkResult(
         original_question="测试问题",
         final_answer="# 这是一个测试答案\n\n详细内容...",
         plan=Plan(
             clarified_question="澄清后的测试问题",
-            subtasks=[
-                Subtask(id=1, description="子任务1"),
-                Subtask(id=2, description="子任务2")
-            ],
+            subtasks=[Subtask(id=1, description="子任务1"), Subtask(id=2, description="子任务2")],
             plan_text="测试规划",
-            reasoning_approach="测试策略"
+            reasoning_approach="测试策略",
         ),
         subtask_results=[
             SubtaskResult(
@@ -145,23 +141,23 @@ def test_format_output():
                 description="子任务1",
                 analysis="分析1",
                 intermediate_conclusion="结论1",
-                confidence=0.9
+                confidence=0.9,
             ),
             SubtaskResult(
                 subtask_id=2,
                 description="子任务2",
                 analysis="分析2",
                 intermediate_conclusion="结论2",
-                confidence=0.8
-            )
+                confidence=0.8,
+            ),
         ],
         review=ReviewResult(
             issues_found=["问题1"],
             improvement_suggestions=["建议1"],
             overall_quality_score=0.85,
-            review_notes="测试审查"
+            review_notes="测试审查",
         ),
-        total_llm_calls=5
+        total_llm_calls=5,
     )
 
     # 测试格式化
@@ -180,7 +176,7 @@ if __name__ == "__main__":
         "--test",
         choices=["basic", "no-review", "format", "all"],
         default="all",
-        help="选择要运行的测试"
+        help="选择要运行的测试",
     )
 
     args = parser.parse_args()

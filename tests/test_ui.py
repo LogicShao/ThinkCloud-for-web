@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 设置UTF-8输出
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
 def test_ui_components():
@@ -23,7 +23,7 @@ def test_ui_components():
         client = LLMClient()
 
         # 创建界面
-        demo = client.create_interface()
+        client.create_interface()
 
         print("✅ UI组件测试通过！")
         print("✅ 主题配置正确")
@@ -39,6 +39,7 @@ def test_ui_components():
     except Exception as e:
         print(f"❌ UI测试失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

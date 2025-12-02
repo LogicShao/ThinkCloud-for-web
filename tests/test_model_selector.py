@@ -6,14 +6,14 @@ import io
 import sys
 
 # 设置UTF-8输出
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 from src.config import (
-    get_models_with_provider,
-    get_models_grouped_by_provider,
     extract_model_id,
     get_model_display_name,
-    get_model_provider
+    get_model_provider,
+    get_models_grouped_by_provider,
+    get_models_with_provider,
 )
 
 
@@ -62,7 +62,7 @@ def test_extract_model_id():
         "🔹 Cerebras | llama-3.3-70b",
         "🔹 DeepSeek | deepseek-chat",
         "🔹 OpenAI | gpt-4o",
-        "plain-model-name"
+        "plain-model-name",
     ]
 
     all_passed = True
@@ -96,12 +96,7 @@ def test_get_display_name():
     print("测试4: 获取模型显示名称")
     print("=" * 60)
 
-    test_models = [
-        "llama-3.3-70b",
-        "deepseek-chat",
-        "gpt-4o",
-        "qwen-max"
-    ]
+    test_models = ["llama-3.3-70b", "deepseek-chat", "gpt-4o", "qwen-max"]
 
     all_passed = True
     for model_id in test_models:
@@ -166,7 +161,7 @@ def test_ui_integration():
         from main import LLMClient
 
         client = LLMClient()
-        demo = client.create_interface()
+        client.create_interface()
 
         print("✅ UI组件创建成功")
         print("✅ 模型选择器已集成")
@@ -174,6 +169,7 @@ def test_ui_integration():
     except Exception as e:
         print(f"❌ UI集成失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -197,6 +193,7 @@ def main():
     except Exception as e:
         print(f"\n❌ 测试过程中发生错误: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

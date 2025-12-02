@@ -9,9 +9,9 @@ import time
 from contextlib import closing
 
 # 设置UTF-8输出
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
-from src.config import is_port_available, find_available_port, get_server_port
+from src.config import find_available_port, get_server_port, is_port_available
 
 
 def occupy_port(port, duration=5):
@@ -120,7 +120,7 @@ def test_port_occupied_scenario():
                 print(f"✅ 成功！由于 {test_port} 被占用，自动找到备用端口: {available_port}")
                 return True
             else:
-                print(f"❌ 失败！应该找到备用端口，但返回了被占用的端口")
+                print("❌ 失败！应该找到备用端口，但返回了被占用的端口")
                 return False
     else:
         print(f"⚠️  端口 {test_port} 已被占用，跳过此测试")
@@ -144,6 +144,7 @@ def main():
     except Exception as e:
         print(f"\n❌ 测试过程中发生错误: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

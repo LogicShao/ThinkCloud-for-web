@@ -2,13 +2,13 @@
 深度思考模块 - 实现多阶段推理和深度研究能力
 """
 
+import hashlib
 import json
 import logging
+import threading
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Dict, Optional, Any
-import threading
-import hashlib
+from typing import Any, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ThinkingStage(Enum):
     """深度思考的各个阶段"""
+
     PLAN = "plan"
     SOLVE = "solve"
     SYNTHESIZE = "synthesize"
@@ -26,6 +27,7 @@ class ThinkingStage(Enum):
 @dataclass
 class Subtask:
     """子任务数据结构"""
+
     id: int
     description: str
     priority: str = "medium"  # high, medium, low
@@ -35,6 +37,7 @@ class Subtask:
 @dataclass
 class Plan:
     """任务规划结果"""
+
     clarified_question: str
     subtasks: List[Subtask]
     plan_text: str
@@ -44,6 +47,7 @@ class Plan:
 @dataclass
 class SubtaskResult:
     """子任务执行结果"""
+
     subtask_id: int
     description: str
     analysis: str
@@ -57,6 +61,7 @@ class SubtaskResult:
 @dataclass
 class ReviewResult:
     """审查结果"""
+
     issues_found: List[str]
     improvement_suggestions: List[str]
     overall_quality_score: float  # 0.0 - 1.0
@@ -66,6 +71,7 @@ class ReviewResult:
 @dataclass
 class DeepThinkResult:
     """深度思考完整结果"""
+
     original_question: str
     final_answer: str
     plan: Plan
@@ -209,10 +215,10 @@ class DeepThinkOrchestrator:
             max_subtasks: int = 6,
             enable_review: bool = True,
             verbose: bool = True,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
     ):
         """
         初始化深度思考编排器
@@ -240,7 +246,7 @@ class DeepThinkOrchestrator:
         self.temperature = temperature
         self.top_p = top_p
         self.max_tokens = max_tokens
-        
+
         # 添加缓存功能
         self.intermediate_cache = {}
         self.cache_lock = threading.Lock()
@@ -271,13 +277,15 @@ class DeepThinkOrchestrator:
 
             # 阶段3: 整合结果
             final_answer = self._synthesize(question, plan, subtask_results)
-            logger.info(f"[SYNTHESIZE] 生成最终答案")
+            logger.info("[SYNTHESIZE] 生成最终答案")
 
             # 阶段4: 可选审查
             review_result = None
             if self.enable_review:
                 review_result = self._review(question, final_answer)
-                logger.info(f"[REVIEW] 审查完成,质量评分: {review_result.overall_quality_score:.2f}")
+                logger.info(
+                    f"[REVIEW] 审查完成,质量评分: {review_result.overall_quality_score:.2f}"
+                )
 
             # 生成思考过程摘要
             thinking_summary = self._generate_thinking_summary(plan, subtask_results)
@@ -289,7 +297,7 @@ class DeepThinkOrchestrator:
                 subtask_results=subtask_results,
                 review=review_result,
                 total_llm_calls=self.llm_call_count,
-                thinking_process_summary=thinking_summary
+                thinking_process_summary=thinking_summary,
             )
 
             logger.info(f"[DEEP THINK] 完成,共调用LLM {self.llm_call_count} 次")
@@ -300,18 +308,18 @@ class DeepThinkOrchestrator:
             # 返回一个错误结果
             return DeepThinkResult(
                 original_question=question,
-                final_answer=f"深度思考过程中出现错误: {str(e)}",
+                final_answer=f"深度思考过程中出现错误: {e!s}",
                 plan=Plan(clarified_question=question, subtasks=[], plan_text=""),
                 subtask_results=[],
-                total_llm_calls=self.llm_call_count
+                total_llm_calls=self.llm_call_count,
             )
 
     def _get_cache_key(self, method_name: str, *args, **kwargs):
         """生成缓存键"""
         cache_input = {
-            'method': method_name,
-            'args': args,
-            'kwargs': {k: v for k, v in kwargs.items() if k != 'self'}
+            "method": method_name,
+            "args": args,
+            "kwargs": {k: v for k, v in kwargs.items() if k != "self"},
         }
         cache_str = str(sorted(cache_input.items()))
         return hashlib.md5(cache_str.encode()).hexdigest()
@@ -329,11 +337,11 @@ class DeepThinkOrchestrator:
     def _plan(self, question: str) -> Plan:
         """生成任务规划"""
         # 尝试从缓存获取
-        cache_key = self._get_cache_key('_plan', question)
+        cache_key = self._get_cache_key("_plan", question)
         cached_result = self._get_from_cache(cache_key)
         if cached_result is not None:
             if self.verbose:
-                logger.info(f"[PLAN] 从缓存获取规划")
+                logger.info("[PLAN] 从缓存获取规划")
             return cached_result
 
         prompt = PromptTemplates.PLAN_PROMPT.format(question=question)
@@ -347,18 +355,18 @@ class DeepThinkOrchestrator:
                     id=st["id"],
                     description=st["description"],
                     priority=st.get("priority", "medium"),
-                    dependencies=st.get("dependencies", [])
+                    dependencies=st.get("dependencies", []),
                 )
-                for st in plan_data.get("subtasks", [])[:self.max_subtasks]
+                for st in plan_data.get("subtasks", [])[: self.max_subtasks]
             ]
 
             result = Plan(
                 clarified_question=plan_data.get("clarified_question", question),
                 subtasks=subtasks,
                 plan_text=plan_data.get("plan_text", ""),
-                reasoning_approach=plan_data.get("reasoning_approach", "")
+                reasoning_approach=plan_data.get("reasoning_approach", ""),
             )
-            
+
             # 存储到缓存
             self._set_to_cache(cache_key, result)
             return result
@@ -371,32 +379,32 @@ class DeepThinkOrchestrator:
                 subtasks=[
                     Subtask(id=1, description="深入理解和分析问题", priority="high"),
                     Subtask(id=2, description="探索可能的解决方案", priority="medium"),
-                    Subtask(id=3, description="综合评估和总结", priority="medium")
+                    Subtask(id=3, description="综合评估和总结", priority="medium"),
                 ],
-                plan_text="由于规划解析失败,使用默认三阶段分析流程"
+                plan_text="由于规划解析失败,使用默认三阶段分析流程",
             )
-            
+
             # 存储到缓存
             self._set_to_cache(cache_key, result)
             return result
 
     def _solve_subtask(
-            self,
-            subtask: Subtask,
-            original_question: str,
-            previous_results: List[SubtaskResult]
+            self, subtask: Subtask, original_question: str, previous_results: List[SubtaskResult]
     ) -> SubtaskResult:
         """解决单个子任务"""
         # 构建之前的结论上下文
-        previous_conclusions = "\n".join([
-            f"- 子任务{r.subtask_id}: {r.intermediate_conclusion}"
-            for r in previous_results
-        ]) if previous_results else "暂无"
+        previous_conclusions = (
+            "\n".join(
+                [f"- 子任务{r.subtask_id}: {r.intermediate_conclusion}" for r in previous_results]
+            )
+            if previous_results
+            else "暂无"
+        )
 
         prompt = PromptTemplates.SUBTASK_PROMPT.format(
             original_question=original_question,
             subtask_description=subtask.description,
-            previous_conclusions=previous_conclusions
+            previous_conclusions=previous_conclusions,
         )
 
         response = self._call_llm(prompt, stage=ThinkingStage.SOLVE)
@@ -412,41 +420,50 @@ class DeepThinkOrchestrator:
                 confidence=float(result_data.get("confidence", 0.7)),
                 limitations=result_data.get("limitations", []),
                 needs_external_info=result_data.get("needs_external_info", False),
-                suggested_tools=result_data.get("suggested_tools", [])
+                suggested_tools=result_data.get("suggested_tools", []),
             )
 
         except Exception as e:
             logger.warning(f"[SOLVE] 子任务 {subtask.id} JSON解析失败: {e}")
             # 容错: 使用原始响应作为分析结果
+            # 确保 response 是字符串且不为空
+            if not isinstance(response, str):
+                response = str(response)
+
+            conclusion = response.strip()
+            if len(conclusion) > 200:
+                conclusion = conclusion[:200] + "..."
+            elif not conclusion:
+                conclusion = "（子任务执行完成，但未能提取结论）"
+
             return SubtaskResult(
                 subtask_id=subtask.id,
                 description=subtask.description,
                 analysis=response,
-                intermediate_conclusion=response[:200] + "...",
+                intermediate_conclusion=conclusion,
                 confidence=0.6,
-                limitations=["JSON解析失败,使用原始响应"]
+                limitations=["JSON解析失败,使用原始响应"],
             )
 
     def _synthesize(
-            self,
-            original_question: str,
-            plan: Plan,
-            subtask_results: List[SubtaskResult]
+            self, original_question: str, plan: Plan, subtask_results: List[SubtaskResult]
     ) -> str:
         """整合所有子任务结果"""
-        all_conclusions = "\n\n".join([
-            f"**子任务 {r.subtask_id}: {r.description}**\n"
-            f"结论: {r.intermediate_conclusion}\n"
-            f"可信度: {r.confidence:.0%}\n"
-            f"局限性: {', '.join(r.limitations) if r.limitations else '无'}"
-            for r in subtask_results
-        ])
+        all_conclusions = "\n\n".join(
+            [
+                f"**子任务 {r.subtask_id}: {r.description}**\n"
+                f"结论: {r.intermediate_conclusion}\n"
+                f"可信度: {r.confidence:.0%}\n"
+                f"局限性: {', '.join(r.limitations) if r.limitations else '无'}"
+                for r in subtask_results
+            ]
+        )
 
         prompt = PromptTemplates.SYNTHESIZE_PROMPT.format(
             original_question=original_question,
             clarified_question=plan.clarified_question,
             reasoning_approach=plan.reasoning_approach,
-            all_conclusions=all_conclusions
+            all_conclusions=all_conclusions,
         )
 
         response = self._call_llm(prompt, stage=ThinkingStage.SYNTHESIZE)
@@ -464,13 +481,21 @@ class DeepThinkOrchestrator:
         except Exception as e:
             logger.warning(f"[SYNTHESIZE] JSON解析失败: {e}")
             # 容错: 直接使用响应
-            return response
+            # 确保响应不为空
+            if response and response.strip():
+                return response
+            else:
+                # 如果响应为空，返回基于子任务结论的回退答案
+                logger.warning("[SYNTHESIZE] 响应为空，使用回退答案")
+                fallback_parts = ["基于上述分析，综合结论如下：\n"]
+                for r in subtask_results:
+                    fallback_parts.append(f"- {r.description}: {r.intermediate_conclusion[:100]}")
+                return "\n".join(fallback_parts)
 
     def _review(self, original_question: str, final_answer: str) -> ReviewResult:
         """审查最终答案"""
         prompt = PromptTemplates.REVIEW_PROMPT.format(
-            original_question=original_question,
-            final_answer=final_answer
+            original_question=original_question, final_answer=final_answer
         )
 
         response = self._call_llm(prompt, stage=ThinkingStage.REVIEW)
@@ -482,7 +507,7 @@ class DeepThinkOrchestrator:
                 issues_found=review_data.get("issues_found", []),
                 improvement_suggestions=review_data.get("improvement_suggestions", []),
                 overall_quality_score=float(review_data.get("overall_quality_score", 0.75)),
-                review_notes=review_data.get("review_notes", "")
+                review_notes=review_data.get("review_notes", ""),
             )
 
         except Exception as e:
@@ -492,7 +517,7 @@ class DeepThinkOrchestrator:
                 issues_found=[],
                 improvement_suggestions=[],
                 overall_quality_score=0.7,
-                review_notes="审查数据解析失败"
+                review_notes="审查数据解析失败",
             )
 
     def _call_llm(self, prompt: str, stage: ThinkingStage) -> str:
@@ -510,13 +535,46 @@ class DeepThinkOrchestrator:
             system_instruction=self.system_instruction,
             temperature=self.temperature,
             top_p=self.top_p,
-            max_tokens=self.max_tokens
+            max_tokens=self.max_tokens,
+            stream=False,  # 深度思考模式必须使用非流式传输
         )
+
+        # 确保返回的是字符串类型
+        # 如果 API 返回了生成器（不应该发生，但做防护），将其完全消费
+        if hasattr(response, '__iter__') and not isinstance(response, (str, bytes)):
+            if self.verbose:
+                logger.warning("[LLM CALL] 检测到生成器响应，正在转换为字符串...")
+            try:
+                response = ''.join(str(chunk) for chunk in response)
+            except Exception as e:
+                error_msg = f"无法将生成器转换为字符串: {e}"
+                logger.error(f"[LLM CALL] {error_msg}")
+                raise TypeError(error_msg)
+
+        # 最终类型检查
+        if not isinstance(response, str):
+            raise TypeError(f"API 响应必须是字符串，而不是 {type(response).__name__}")
+
+        # 调试日志：显示响应的前200个字符
+        if self.verbose:
+            preview = response[:200].replace('\n', ' ')
+            logger.info(f"[LLM RESPONSE] {preview}{'...' if len(response) > 200 else ''}")
 
         return response
 
     def _parse_json_response(self, response: str) -> Dict[str, Any]:
         """解析JSON响应,支持容错处理"""
+        # 防护：如果收到生成器对象，将其转换为字符串
+        if hasattr(response, '__iter__') and not isinstance(response, (str, bytes)):
+            try:
+                response = ''.join(response)
+            except Exception as e:
+                raise TypeError(f"响应必须是字符串，而不是 {type(response).__name__}: {e}")
+
+        # 确保是字符串类型
+        if not isinstance(response, str):
+            raise TypeError(f"响应必须是字符串，而不是 {type(response).__name__}")
+
         # 尝试直接解析
         try:
             return json.loads(response)
@@ -543,24 +601,27 @@ class DeepThinkOrchestrator:
         # 如果都失败,抛出异常
         raise ValueError(f"无法解析JSON响应: {response[:100]}...")
 
-    def _generate_thinking_summary(
-            self,
-            plan: Plan,
-            subtask_results: List[SubtaskResult]
-    ) -> str:
+    def _generate_thinking_summary(self, plan: Plan, subtask_results: List[SubtaskResult]) -> str:
         """生成思考过程摘要"""
         summary_parts = [
             "## 🧠 深度思考过程摘要\n",
             f"**问题澄清:** {plan.clarified_question}\n",
             f"**推理策略:** {plan.reasoning_approach}\n",
-            f"\n**子任务执行情况:**"
+            "\n**子任务执行情况:**",
         ]
 
         for result in subtask_results:
+            # 智能截断：只在超过100字符时才添加省略号
+            conclusion = result.intermediate_conclusion
+            if len(conclusion) > 100:
+                conclusion_display = conclusion[:100] + "..."
+            else:
+                conclusion_display = conclusion
+
             summary_parts.append(
                 f"\n{result.subtask_id}. {result.description}\n"
                 f"   - 可信度: {result.confidence:.0%}\n"
-                f"   - 结论: {result.intermediate_conclusion[:100]}..."
+                f"   - 结论: {conclusion_display}"
             )
 
         return "\n".join(summary_parts)
@@ -581,7 +642,15 @@ def format_deep_think_result(result: DeepThinkResult, include_process: bool = Tr
 
     # 主要答案
     output_parts.append("# 💡 深度思考结果\n")
-    output_parts.append(result.final_answer)
+
+    # 确保 final_answer 不为空
+    if result.final_answer and result.final_answer.strip():
+        output_parts.append(result.final_answer)
+    else:
+        output_parts.append("⚠️ **未能生成完整答案**\n\n可能原因：")
+        output_parts.append("- 模型未返回符合预期的 JSON 格式")
+        output_parts.append("- API 调用超时或失败")
+        output_parts.append("\n请查看下方的思考过程摘要了解详情。")
 
     # 思考过程(可选)
     if include_process and result.thinking_process_summary:
@@ -593,12 +662,12 @@ def format_deep_think_result(result: DeepThinkResult, include_process: bool = Tr
         output_parts.append(f"**整体评分:** {result.review.overall_quality_score:.0%}")
 
         if result.review.issues_found:
-            output_parts.append(f"\n**发现的问题:**")
+            output_parts.append("\n**发现的问题:**")
             for issue in result.review.issues_found:
                 output_parts.append(f"- {issue}")
 
         if result.review.improvement_suggestions:
-            output_parts.append(f"\n**改进建议:**")
+            output_parts.append("\n**改进建议:**")
             for suggestion in result.review.improvement_suggestions:
                 output_parts.append(f"- {suggestion}")
 

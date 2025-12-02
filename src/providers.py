@@ -3,7 +3,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Dict, List, Optional
 
 from cerebras.cloud.sdk import Cerebras
 from openai import OpenAI
@@ -34,14 +34,14 @@ class BaseProvider(ABC):
             self,
             messages: List[Dict],
             model: str,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None,
-            frequency_penalty: float = None,
-            presence_penalty: float = None,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
             stream: bool = False,
-            **kwargs
+            **kwargs,
     ):
         """
         调用聊天完成API
@@ -91,14 +91,14 @@ class CerebrasProvider(BaseProvider):
             self,
             messages: List[Dict],
             model: str,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None,
-            frequency_penalty: float = None,
-            presence_penalty: float = None,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
             stream: bool = False,
-            **kwargs
+            **kwargs,
     ):
         """调用Cerebras聊天完成API"""
         if not self.is_available():
@@ -145,7 +145,7 @@ class CerebrasProvider(BaseProvider):
                 return chat_completion.choices[0].message.content
 
         except Exception as e:
-            error_msg = f"{self.provider_name} API调用失败: {str(e)}"
+            error_msg = f"{self.provider_name} API调用失败: {e!s}"
             print(error_msg)
             if stream:
                 yield error_msg
@@ -169,10 +169,7 @@ class DeepSeekProvider(BaseProvider):
             return
 
         try:
-            self.client = OpenAI(
-                api_key=api_key,
-                base_url=base_url
-            )
+            self.client = OpenAI(api_key=api_key, base_url=base_url)
         except Exception as e:
             print(f"初始化DeepSeek客户端失败: {e}")
 
@@ -184,14 +181,14 @@ class DeepSeekProvider(BaseProvider):
             self,
             messages: List[Dict],
             model: str,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None,
-            frequency_penalty: float = None,
-            presence_penalty: float = None,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
             stream: bool = False,
-            **kwargs
+            **kwargs,
     ):
         """调用DeepSeek聊天完成API"""
         if not self.is_available():
@@ -208,11 +205,7 @@ class DeepSeekProvider(BaseProvider):
                 api_messages.insert(0, {"role": "system", "content": system_instruction})
 
             # 构建API参数
-            api_params = {
-                "model": model,
-                "messages": api_messages,
-                "stream": stream
-            }
+            api_params = {"model": model, "messages": api_messages, "stream": stream}
 
             # 添加可选参数
             if temperature is not None:
@@ -238,7 +231,7 @@ class DeepSeekProvider(BaseProvider):
                 return response.choices[0].message.content
 
         except Exception as e:
-            error_msg = f"{self.provider_name} API调用失败: {str(e)}"
+            error_msg = f"{self.provider_name} API调用失败: {e!s}"
             print(error_msg)
             if stream:
                 yield error_msg
@@ -262,10 +255,7 @@ class OpenAIProvider(BaseProvider):
             return
 
         try:
-            self.client = OpenAI(
-                api_key=api_key,
-                base_url=base_url
-            )
+            self.client = OpenAI(api_key=api_key, base_url=base_url)
         except Exception as e:
             print(f"初始化OpenAI客户端失败: {e}")
 
@@ -277,14 +267,14 @@ class OpenAIProvider(BaseProvider):
             self,
             messages: List[Dict],
             model: str,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None,
-            frequency_penalty: float = None,
-            presence_penalty: float = None,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
             stream: bool = False,
-            **kwargs
+            **kwargs,
     ):
         """调用OpenAI聊天完成API"""
         if not self.is_available():
@@ -301,11 +291,7 @@ class OpenAIProvider(BaseProvider):
                 api_messages.insert(0, {"role": "system", "content": system_instruction})
 
             # 构建API参数
-            api_params = {
-                "model": model,
-                "messages": api_messages,
-                "stream": stream
-            }
+            api_params = {"model": model, "messages": api_messages, "stream": stream}
 
             # 添加可选参数
             if temperature is not None:
@@ -331,7 +317,7 @@ class OpenAIProvider(BaseProvider):
                 return response.choices[0].message.content
 
         except Exception as e:
-            error_msg = f"{self.provider_name} API调用失败: {str(e)}"
+            error_msg = f"{self.provider_name} API调用失败: {e!s}"
             print(error_msg)
             if stream:
                 yield error_msg
@@ -355,10 +341,7 @@ class DashScopeProvider(BaseProvider):
             return
 
         try:
-            self.client = OpenAI(
-                api_key=api_key,
-                base_url=base_url
-            )
+            self.client = OpenAI(api_key=api_key, base_url=base_url)
         except Exception as e:
             print(f"初始化DashScope客户端失败: {e}")
 
@@ -370,14 +353,14 @@ class DashScopeProvider(BaseProvider):
             self,
             messages: List[Dict],
             model: str,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None,
-            frequency_penalty: float = None,
-            presence_penalty: float = None,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
             stream: bool = False,
-            **kwargs
+            **kwargs,
     ):
         """调用DashScope聊天完成API"""
         if not self.is_available():
@@ -394,11 +377,7 @@ class DashScopeProvider(BaseProvider):
                 api_messages.insert(0, {"role": "system", "content": system_instruction})
 
             # 构建API参数
-            api_params = {
-                "model": model,
-                "messages": api_messages,
-                "stream": stream
-            }
+            api_params = {"model": model, "messages": api_messages, "stream": stream}
 
             # 添加可选参数
             if temperature is not None:
@@ -426,7 +405,7 @@ class DashScopeProvider(BaseProvider):
                 return response.choices[0].message.content
 
         except Exception as e:
-            error_msg = f"{self.provider_name} API调用失败: {str(e)}"
+            error_msg = f"{self.provider_name} API调用失败: {e!s}"
             print(error_msg)
             if stream:
                 yield error_msg
@@ -450,10 +429,7 @@ class KimiProvider(BaseProvider):
             return
 
         try:
-            self.client = OpenAI(
-                api_key=api_key,
-                base_url=base_url
-            )
+            self.client = OpenAI(api_key=api_key, base_url=base_url)
         except Exception as e:
             print(f"初始化Kimi客户端失败: {e}")
 
@@ -465,14 +441,14 @@ class KimiProvider(BaseProvider):
             self,
             messages: List[Dict],
             model: str,
-            system_instruction: str = None,
-            temperature: float = None,
-            top_p: float = None,
-            max_tokens: int = None,
-            frequency_penalty: float = None,
-            presence_penalty: float = None,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
             stream: bool = False,
-            **kwargs
+            **kwargs,
     ):
         """调用Kimi聊天完成API"""
         if not self.is_available():
@@ -489,11 +465,7 @@ class KimiProvider(BaseProvider):
                 api_messages.insert(0, {"role": "system", "content": system_instruction})
 
             # 构建API参数
-            api_params = {
-                "model": model,
-                "messages": api_messages,
-                "stream": stream
-            }
+            api_params = {"model": model, "messages": api_messages, "stream": stream}
 
             # 添加可选参数
             if temperature is not None:
@@ -519,7 +491,7 @@ class KimiProvider(BaseProvider):
                 return response.choices[0].message.content
 
         except Exception as e:
-            error_msg = f"{self.provider_name} API调用失败: {str(e)}"
+            error_msg = f"{self.provider_name} API调用失败: {e!s}"
             print(error_msg)
             if stream:
                 yield error_msg
@@ -535,7 +507,7 @@ class ProviderFactory:
         "deepseek": DeepSeekProvider,
         "openai": OpenAIProvider,
         "dashscope": DashScopeProvider,
-        "kimi": KimiProvider
+        "kimi": KimiProvider,
     }
 
     @classmethod
@@ -559,6 +531,7 @@ class ProviderFactory:
     def get_available_providers(cls) -> List[str]:
         """获取可用的提供商列表"""
         from .config import get_enabled_providers
+
         return get_enabled_providers()
 
     @classmethod

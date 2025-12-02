@@ -3,9 +3,9 @@
 支持Gradio messages格式
 """
 
-from typing import List, Dict, Any
-from collections import deque
 import threading
+from collections import deque
+from typing import Any, Dict, List
 
 
 class ChatManager:
@@ -31,15 +31,9 @@ class ChatManager:
         with self._lock:
             for msg in self.history:
                 if msg["role"] == "user":
-                    gradio_messages.append({
-                        "role": "user",
-                        "content": msg["content"]
-                    })
+                    gradio_messages.append({"role": "user", "content": msg["content"]})
                 elif msg["role"] == "assistant":
-                    gradio_messages.append({
-                        "role": "assistant",
-                        "content": msg["content"]
-                    })
+                    gradio_messages.append({"role": "assistant", "content": msg["content"]})
         return gradio_messages
 
     def clear_history(self):
@@ -62,10 +56,7 @@ class MessageProcessor:
         api_messages = []
         for msg in gradio_messages:
             if msg["role"] in ["user", "assistant"]:
-                api_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
+                api_messages.append({"role": msg["role"], "content": msg["content"]})
         return api_messages
 
     @staticmethod
@@ -74,10 +65,7 @@ class MessageProcessor:
         gradio_messages = []
         for msg in api_messages:
             if msg["role"] in ["user", "assistant"]:
-                gradio_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
+                gradio_messages.append({"role": msg["role"], "content": msg["content"]})
         return gradio_messages
 
     @staticmethod

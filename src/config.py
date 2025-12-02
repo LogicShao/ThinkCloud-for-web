@@ -15,28 +15,28 @@ PROVIDER_CONFIG = {
     "cerebras": {
         "api_key": os.environ.get("CEREBRAS_API_KEY"),
         "base_url": "https://api.cerebras.ai",
-        "enabled": True
+        "enabled": True,
     },
     "deepseek": {
         "api_key": os.environ.get("DEEPSEEK_API_KEY"),
         "base_url": "https://api.deepseek.com",
-        "enabled": True
+        "enabled": True,
     },
     "openai": {
         "api_key": os.environ.get("OPENAI_API_KEY"),
         "base_url": "https://api.openai.com/v1",
-        "enabled": True
+        "enabled": True,
     },
     "dashscope": {
         "api_key": os.environ.get("DASHSCOPE_API_KEY"),
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "enabled": True
+        "enabled": True,
     },
     "kimi": {
         "api_key": os.environ.get("KIMI_API_KEY"),
         "base_url": "https://api.moonshot.cn/v1",
-        "enabled": True
-    }
+        "enabled": True,
+    },
 }
 
 # 提供商支持的模型映射
@@ -48,25 +48,15 @@ PROVIDER_MODELS = {
         "llama-3.1-70b",
         "llama-3.2-3b",
         "llama-3.2-1b",
-
         # 其他模型
         "qwen-3-235b-a22b-instruct-2507",
         "qwen-3-235b-a22b-thinking-2507",
         "zai-glm-4.6",
         "gpt-oss-120b",
-        "qwen-3-32b"
+        "qwen-3-32b",
     ],
-    "deepseek": [
-        "deepseek-chat",
-        "deepseek-coder",
-        "deepseek-reasoner"
-    ],
-    "openai": [
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gpt-4-turbo",
-        "gpt-3.5-turbo"
-    ],
+    "deepseek": ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
+    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
     "dashscope": [
         "qwen-max",
         "qwen-plus",
@@ -78,20 +68,19 @@ PROVIDER_MODELS = {
         "qwen2-7b-instruct",
         "qwen2-72b-instruct",
         "qwen2-1.5b-instruct",
-        "qwen2-57b-a14b-instruct"
+        "qwen2-57b-a14b-instruct",
     ],
     "kimi": [
         # V1 系列 - 支持不同上下文长度
         "moonshot-v1-8k",
         "moonshot-v1-32k",
         "moonshot-v1-128k",
-
         # K2 系列 - 最新版本
         "kimi-k2-0905-preview",  # 最新版本，256K 上下文
         "kimi-k2-turbo-preview",  # 高速版本，60-100 Tokens/s
         "kimi-k2-thinking",  # 长思考模型，256K 上下文
-        "kimi-k2-thinking-turbo"  # 长思考高速版本
-    ]
+        "kimi-k2-thinking-turbo",  # 长思考高速版本
+    ],
 }
 
 # 默认提供商和模型
@@ -112,7 +101,7 @@ PROVIDER_DISPLAY_NAMES = {
     "deepseek": "DeepSeek",
     "openai": "OpenAI",
     "dashscope": "DashScope",
-    "kimi": "Kimi"
+    "kimi": "Kimi",
 }
 
 
@@ -345,36 +334,36 @@ MODEL_PARAMETERS = {
         "min": 0.0,
         "max": 2.0,
         "step": 0.1,
-        "description": "控制生成文本的随机性。值越高，输出越随机；值越低，输出越确定"
+        "description": "控制生成文本的随机性。值越高，输出越随机；值越低，输出越确定",
     },
     "top_p": {
         "default": 0.9,
         "min": 0.0,
         "max": 1.0,
         "step": 0.05,
-        "description": "核采样参数。控制考虑的词汇范围"
+        "description": "核采样参数。控制考虑的词汇范围",
     },
     "max_tokens": {
         "default": 2048,
         "min": 1,
         "max": 32768,
         "step": 256,
-        "description": "生成的最大token数量"
+        "description": "生成的最大token数量",
     },
     "frequency_penalty": {
         "default": 0.0,
         "min": -2.0,
         "max": 2.0,
         "step": 0.1,
-        "description": "降低重复词汇的频率。正值减少重复，负值增加重复"
+        "description": "降低重复词汇的频率。正值减少重复，负值增加重复",
     },
     "presence_penalty": {
         "default": 0.0,
         "min": -2.0,
         "max": 2.0,
         "step": 0.1,
-        "description": "鼓励模型谈论新主题。正值增加话题多样性"
-    }
+        "description": "鼓励模型谈论新主题。正值增加话题多样性",
+    },
 }
 
 # 默认系统提示词
