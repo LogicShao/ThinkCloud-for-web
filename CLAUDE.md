@@ -6,6 +6,16 @@
 
 ## 变更记录 (Changelog)
 
+### 2025-12-03 (重构: 解耦 UI 层)
+
+- ✅ **解耦 main.py**: 从 673 行简化到 55 行，仅保留启动逻辑
+- ✅ **新增 UIClient**: `src/ui_client.py` (95 行)，作为总协调器
+- ✅ **新增 UIComposer**: `src/ui_composer.py` (330 行)，纯 UI 布局构建
+- ✅ **新增 EventHandlers**: `src/event_handlers.py` (260 行)，事件处理逻辑
+- ✅ **新增 ResponseHandlers**: `src/response_handlers.py` (300 行)，响应处理逻辑
+- ✅ **设计原则**: 遵循 SOLID 原则，职责分离，可测试性大幅提升
+- ✅ **完全向后兼容**: 功能保持不变，代码更清晰易维护
+
 ### 2025-12-01 (新增 Kimi K2 系列模型)
 
 - 在 src/config.py 中添加 Kimi K2 系列模型支持
@@ -45,7 +55,115 @@ SimpleLLMFront (ThinkCloud for Web) 是一个多提供商 LLM 聊天客户端，
 - **后端**: Python 3.8+
 - **AI SDK**: Cerebras Cloud SDK, OpenAI SDK
 - **配置管理**: python-dotenv
-- **架构模式**: 工厂模式、单例模式、策略模式
+- **架构模式**: 工厂模式、单例模式、策略模式、MVC 模式（UI 层）
+
+### UI 层重构架构（2025-12-03）
+
+**重构前的问题**:
+
+- `main.py` 673 行，包含 `LLMClient` 类（600+ 行）
+- `LLMClient` 职责过多：UI 创建、事件处理、响应生成
+- 事件处理器是嵌套函数，无法单独测试
+- 代码耦合度高，难以维护和扩展
+
+**重构后的架构**:
+
+```
+main.py (55 行)
+    ↓（导入）
+src/ui_client.py (95 行)
+    ↓（组合）
+    ├─ src/ui_composer.py (330 行) - UI 布局构建
+    ├─ src/event_handlers.py (260 行) - 事件处理逻辑
+    └─ src/response_handlers.py (300 行) - 响应处理逻辑
+```
+
+**模块职责分离**:
+
+1. **UIClient** - 总协调器
+    - 创建并管理 UIComposer、EventHandlers、ResponseHandlers
+    - 提供简单的入口方法 `create_interface()`
+    - 处理状态显示和模型更新逻辑
+
+2. **UIComposer** - 纯 UI 布局构建器
+    - 只负责创建 Gradio 组件和布局
+    - 不包含任何业务逻辑
+    - 接受回调函数参数，实现纯渲染层
+    - 关键方法：`create_interface()`
+
+3. **EventHandlers** - 事件处理逻辑
+    - 处理所有 Gradio 事件绑定
+    - 管理用户消息（`user_message`）
+    - 调用 ResponseHandlers 生成机器人回复（`bot_message`）
+    - 处理清除/导出对话等辅助功能
+    - 关键方法：`setup_all_events()`
+
+4. **ResponseHandlers** - 响应处理器
+    - `ResponseHandler`: 处理标准模式（流式/非流式）
+    - `DeepThinkHandler`: 处理深度思考模式
+    - 与 LLM API 交互，生成回复内容
+    - 关键方法：`handle_standard_response()`, `handle_deep_think_response()`
+
+**设计原则体现**:
+
+- ✅ **单一职责原则 (S)**: 每个模块只负责一个领域
+- ✅ **开闭原则 (O)**: 通过事件处理器扩展新功能
+- ✅ **依赖倒置原则 (D)**: UIComposer 通过回调注入业务逻辑
+- ✅ **可测试性**: 所有处理器都是独立类，可以单独测试
+- ✅ **可维护性**: 代码行数从 600+ 行分散到多个 200-300 行的模块
+
+**事件处理流程**:
+
+```
+用户输入消息
+    ↓
+EventHandlers.user_message() - 添加到历史
+    ↓
+EventHandlers.bot_message() - 根据模式分发
+    ↓    ↓
+ResponseHandler.handle_standard_response()  DeepThinkHandler.handle_deep_think_response()
+    ↓                                            ↓
+调用 api_service.chat_completion()       调用 DeepThinkOrchestrator.run()
+    ↓                                            ↓
+生成回复文本                               生成深度思考结果
+    ↓                                            ↓
+更新Gradio界面（追加到history）             格式化并更新界面
+    ↓                                            ↓
+EventHandlers.update_status() - 刷新状态显示
+```
+
+**使用示例（在main.py中）**:
+
+```python
+from src.ui_client import UIClient
+
+# 创建UI客户端（自动初始化所有组件）
+client = UIClient()
+
+# 创建界面（内部自动协调各个模块）
+demo = client.create_interface()
+
+# 启动应用
+demo.launch(server_name=HOST, server_port=PORT)
+```
+
+**扩展新功能**:
+
+1. **添加新的事件**: 在 EventHandlers 中添加方法
+2. **修改响应逻辑**: 在 ResponseHandlers 中调整
+3. **调整UI布局**: 在 UIComposer 中修改
+4. **不需要修改**: main.py 和 UIClient（保持稳定）
+
+**优势对比**:
+
+| 维度         | 重构前        | 重构后      |
+|------------|------------|----------|
+| main.py 行数 | 673 行      | 55 行     |
+| 类职责        | 单一庞大类      | 4个专一模块   |
+| 可测试性       | 嵌套函数，无法测试  | 独立类，容易测试 |
+| 扩展性        | 修改困难       | 添加新处理器即可 |
+| 维护成本       | 高（600+行代码） | 低（分散管理）  |
+| 团队协作       | 冲突概率高      | 可并行开发    |
 
 ### 核心设计理念
 
@@ -89,16 +207,22 @@ graph TD
 
 ## 模块索引
 
-| 模块路径                    | 职责              | 关键类/函数                                     | 依赖               |
-|-------------------------|-----------------|--------------------------------------------|------------------|
-| **main.py**             | Gradio UI 和应用入口 | `LLMClient`, `main()`                      | src.*            |
-| **src/config.py**       | 配置管理、端口工具       | `PROVIDER_CONFIG`, `get_server_port()`     | dotenv           |
-| **src/api_service.py**  | 多提供商 API 编排     | `MultiProviderAPIService` (单例)             | providers        |
-| **src/providers.py**    | 提供商实现           | `BaseProvider`, `ProviderFactory`          | cerebras, openai |
-| **src/chat_manager.py** | 对话历史管理          | `ChatManager`, `MessageProcessor`          | -                |
-| **src/deep_think.py**   | 深度思考编排器         | `DeepThinkOrchestrator`, `PromptTemplates` | api_service      |
-| **tests/**              | 测试脚本集合          | 各测试函数                                      | src.*            |
-| **doc/**                | 功能文档            | -                                          | -                |
+| 模块路径                         | 职责          | 关键类/函数                                 | 代码行数 | 依赖                                      |
+|------------------------------|-------------|----------------------------------------|------|-----------------------------------------|
+| **main.py**                  | 应用启动入口      | `main()`                               | 55   | src.config, src.ui_client               |
+| **src/ui_client.py**         | UI客户端主类     | `UIClient`                             | 95   | src.*                                   |
+| **src/ui_composer.py**       | UI布局构建器     | `UIComposer`                           | 330  | gradio, src.config                      |
+| **src/event_handlers.py**    | 事件处理器       | `EventHandlers`                        | 260  | src.chat_manager, src.response_handlers |
+| **src/response_handlers.py** | 响应处理器       | `ResponseHandler`, `DeepThinkHandler`  | 300  | src.api_service, src.deep_think         |
+| **src/config.py**            | 配置管理、端口工具   | `PROVIDER_CONFIG`, `get_server_port()` | -    | dotenv                                  |
+| **src/api_service.py**       | 多提供商 API 编排 | `MultiProviderAPIService` (单例)         | -    | providers                               |
+| **src/providers.py**         | 提供商实现       | `BaseProvider`, `ProviderFactory`      | -    | cerebras, openai                        |
+| **src/chat_manager.py**      | 对话历史管理      | `ChatManager`, `MessageProcessor`      | -    | -                                       |
+| **src/deep_think/**          | 深度思考系统（模块化） | `DeepThinkOrchestrator`, 阶段处理器, 提示模板   | -    | api_service                             |
+| **tests/**                   | 测试脚本集合      | 各测试函数                                  | -    | src.*                                   |
+| **doc/**                     | 功能文档        | -                                      | -    | -                                       |
+
+**说明**: 代码行数统计于 2025-12-03 重构后
 
 ## 运行与开发
 

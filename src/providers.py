@@ -191,23 +191,45 @@ class DeepSeekProvider(BaseProvider):
             **kwargs,
     ):
         """调用DeepSeek聊天完成API"""
+        if stream:
+            # 流式传输 - 调用生成器方法
+            return self._chat_completion_stream(
+                messages, model, system_instruction,
+                temperature, top_p, max_tokens,
+                frequency_penalty, presence_penalty, **kwargs
+            )
+        else:
+            # 非流式传输 - 调用普通方法（没有yield，不是生成器）
+            return self._chat_completion_sync(
+                messages, model, system_instruction,
+                temperature, top_p, max_tokens,
+                frequency_penalty, presence_penalty, **kwargs
+            )
+
+    def _chat_completion_sync(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
+            **kwargs,
+    ):
+        """非流式聊天完成（普通方法，非生成器）"""
         if not self.is_available():
-            error_msg = f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
-            if stream:
-                yield error_msg
-                return
-            return error_msg
+            return f"错误: 无法初始化{self.provider_name}客户端。请检查{self.provider_name.upper()}_API_KEY环境变量。"
 
         try:
-            # 如果有系统提示词，添加到消息列表开头
+            # 构建消息
             api_messages = messages.copy()
             if system_instruction:
                 api_messages.insert(0, {"role": "system", "content": system_instruction})
 
             # 构建API参数
-            api_params = {"model": model, "messages": api_messages, "stream": stream}
-
-            # 添加可选参数
+            api_params = {"model": model, "messages": api_messages, "stream": False}
             if temperature is not None:
                 api_params["temperature"] = temperature
             if top_p is not None:
@@ -219,26 +241,70 @@ class DeepSeekProvider(BaseProvider):
             if presence_penalty is not None:
                 api_params["presence_penalty"] = presence_penalty
 
+            # 调用API
             response = self.client.chat.completions.create(**api_params)
 
-            if stream:
-                # 流式传输
-                for chunk in response:
-                    if chunk.choices[0].delta.content:
-                        yield chunk.choices[0].delta.content
-            else:
-                # 非流式传输
-                return response.choices[0].message.content
+            # 调试信息
+
+            # 提取内容
+            if not hasattr(response, 'choices') or len(response.choices) == 0:
+                return "错误: API响应格式异常"
+
+            content = response.choices[0].message.content
+            if content is None:
+                return "错误: API返回空内容"
+
+            return content
 
         except Exception as e:
-            error_msg = f"{self.provider_name} API调用失败: {e!s}"
-            print(error_msg)
-            if stream:
-                yield error_msg
-            else:
-                return error_msg
+            return f"{self.provider_name} API调用失败: {e!s}"
 
+    def _chat_completion_stream(
+            self,
+            messages: List[Dict],
+            model: str,
+            system_instruction: Optional[str] = None,
+            temperature: Optional[float] = None,
+            top_p: Optional[float] = None,
+            max_tokens: Optional[int] = None,
+            frequency_penalty: Optional[float] = None,
+            presence_penalty: Optional[float] = None,
+            **kwargs,
+    ):
+        """流式聊天完成（生成器方法）"""
+        if not self.is_available():
+            yield f"错误: 无法初始化{self.provider_name}客户端。"
+            return
 
+        try:
+            # 构建消息
+            api_messages = messages.copy()
+            if system_instruction:
+                api_messages.insert(0, {"role": "system", "content": system_instruction})
+
+            # 构建API参数
+            api_params = {"model": model, "messages": api_messages, "stream": True}
+            if temperature is not None:
+                api_params["temperature"] = temperature
+            if top_p is not None:
+                api_params["top_p"] = top_p
+            if max_tokens is not None:
+                api_params["max_tokens"] = max_tokens
+            if frequency_penalty is not None:
+                api_params["frequency_penalty"] = frequency_penalty
+            if presence_penalty is not None:
+                api_params["presence_penalty"] = presence_penalty
+
+            # 调用API
+            response = self.client.chat.completions.create(**api_params)
+
+            # 流式传输
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+
+        except Exception as e:
+            yield f"{self.provider_name} API调用失败: {e!s}"
 class OpenAIProvider(BaseProvider):
     """OpenAI提供商实现"""
 
@@ -313,8 +379,31 @@ class OpenAIProvider(BaseProvider):
                     if chunk.choices[0].delta.content:
                         yield chunk.choices[0].delta.content
             else:
-                # 非流式传输
-                return response.choices[0].message.content
+                # 非流式传输 - 直接访问response.choices
+                # 注意：ChatCompletion对象虽然有__iter__方法，但不应该被迭代
+                # 应该直接访问choices属性
+
+                # 确保response有choices属性
+                if not hasattr(response, 'choices'):
+                    print(f"[ERROR] {self.provider_name} response没有choices属性!")
+                    print(f"[ERROR] Response type: {type(response)}")
+                    return "错误: API响应格式异常（无choices属性）"
+
+                if len(response.choices) == 0:
+                    print(f"[ERROR] {self.provider_name} response.choices为空!")
+                    return "错误: API响应格式异常（choices为空）"
+
+                if not hasattr(response.choices[0], 'message'):
+                    print(f"[ERROR] {self.provider_name} choices[0]没有message属性!")
+                    return "错误: API响应格式异常（无message属性）"
+
+                content = response.choices[0].message.content
+                if content is None:
+                    print(f"[ERROR] {self.provider_name} message.content为None!")
+                    return "错误: API返回空内容"
+
+                print(f"[DEBUG] {self.provider_name} 成功提取内容，长度: {len(content)}")
+                return content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {e!s}"
@@ -401,8 +490,31 @@ class DashScopeProvider(BaseProvider):
                     if chunk.choices[0].delta.content:
                         yield chunk.choices[0].delta.content
             else:
-                # 非流式传输
-                return response.choices[0].message.content
+                # 非流式传输 - 直接访问response.choices
+                # 注意：ChatCompletion对象虽然有__iter__方法，但不应该被迭代
+                # 应该直接访问choices属性
+
+                # 确保response有choices属性
+                if not hasattr(response, 'choices'):
+                    print(f"[ERROR] {self.provider_name} response没有choices属性!")
+                    print(f"[ERROR] Response type: {type(response)}")
+                    return "错误: API响应格式异常（无choices属性）"
+
+                if len(response.choices) == 0:
+                    print(f"[ERROR] {self.provider_name} response.choices为空!")
+                    return "错误: API响应格式异常（choices为空）"
+
+                if not hasattr(response.choices[0], 'message'):
+                    print(f"[ERROR] {self.provider_name} choices[0]没有message属性!")
+                    return "错误: API响应格式异常（无message属性）"
+
+                content = response.choices[0].message.content
+                if content is None:
+                    print(f"[ERROR] {self.provider_name} message.content为None!")
+                    return "错误: API返回空内容"
+
+                print(f"[DEBUG] {self.provider_name} 成功提取内容，长度: {len(content)}")
+                return content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {e!s}"
@@ -487,8 +599,31 @@ class KimiProvider(BaseProvider):
                     if chunk.choices[0].delta.content:
                         yield chunk.choices[0].delta.content
             else:
-                # 非流式传输
-                return response.choices[0].message.content
+                # 非流式传输 - 直接访问response.choices
+                # 注意：ChatCompletion对象虽然有__iter__方法，但不应该被迭代
+                # 应该直接访问choices属性
+
+                # 确保response有choices属性
+                if not hasattr(response, 'choices'):
+                    print(f"[ERROR] {self.provider_name} response没有choices属性!")
+                    print(f"[ERROR] Response type: {type(response)}")
+                    return "错误: API响应格式异常（无choices属性）"
+
+                if len(response.choices) == 0:
+                    print(f"[ERROR] {self.provider_name} response.choices为空!")
+                    return "错误: API响应格式异常（choices为空）"
+
+                if not hasattr(response.choices[0], 'message'):
+                    print(f"[ERROR] {self.provider_name} choices[0]没有message属性!")
+                    return "错误: API响应格式异常（无message属性）"
+
+                content = response.choices[0].message.content
+                if content is None:
+                    print(f"[ERROR] {self.provider_name} message.content为None!")
+                    return "错误: API返回空内容"
+
+                print(f"[DEBUG] {self.provider_name} 成功提取内容，长度: {len(content)}")
+                return content
 
         except Exception as e:
             error_msg = f"{self.provider_name} API调用失败: {e!s}"

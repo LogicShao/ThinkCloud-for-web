@@ -27,21 +27,33 @@ providers.py (提供商层)
     ↓
 api_service.py (服务层 - 单例)
     ↓
-deep_think.py (应用层)
+deep_think/ (应用层 - 模块化)
+    ├── core/ (核心接口和模型)
+    ├── stages/ (阶段处理器)
+    ├── prompts/ (提示模板)
+    ├── orchestrator.py (编排器)
+    ├── formatter.py (格式化工具)
+    └── utils.py (工具函数)
     ↓
 chat_manager.py (辅助层)
 ```
 
 ### 模块清单
 
-| 文件                | 行数  | 职责     | 关键类/函数                                     |
-|-------------------|-----|--------|--------------------------------------------|
-| `__init__.py`     | 1   | 包标识    | -                                          |
-| `config.py`       | 364 | 配置管理   | `PROVIDER_CONFIG`, `get_server_port()`     |
-| `providers.py`    | 476 | 提供商实现  | `BaseProvider`, `ProviderFactory`          |
-| `api_service.py`  | 152 | API 编排 | `MultiProviderAPIService` (单例)             |
-| `chat_manager.py` | 84  | 对话管理   | `ChatManager`, `MessageProcessor`          |
-| `deep_think.py`   | 567 | 深度思考   | `DeepThinkOrchestrator`, `PromptTemplates` |
+| 文件/目录                        | 职责      | 关键类/函数                                          | 说明          |
+|------------------------------|---------|-------------------------------------------------|-------------|
+| `__init__.py`                | 包标识     | -                                               | 空文件         |
+| `config.py`                  | 配置管理    | `PROVIDER_CONFIG`, `get_server_port()`          | 环境变量、端口工具   |
+| `providers.py`               | 提供商实现   | `BaseProvider`, `ProviderFactory`               | 工厂模式        |
+| `api_service.py`             | API 编排  | `MultiProviderAPIService` (单例)                  | 全局单例        |
+| `chat_manager.py`            | 对话管理    | `ChatManager`, `MessageProcessor`               | 历史记录管理      |
+| `deep_think/`                | 深度思考系统  | 模块化架构，包含多个子模块                                   | 遵循SOLID原则   |
+| `deep_think/core/`           | 核心接口和模型 | `ILLMService`, `IStageProcessor`, 数据模型          | 抽象基类和数据结构   |
+| `deep_think/stages/`         | 阶段处理器   | `PlannerStageProcessor`, `SolverStageProcessor` | 各阶段具体实现     |
+| `deep_think/prompts/`        | 提示模板系统  | `BasePromptTemplate`, `PromptTemplateManager`   | 模板管理和格式化    |
+| `deep_think/orchestrator.py` | 编排器     | `DeepThinkOrchestrator`                         | 协调各阶段执行     |
+| `deep_think/formatter.py`    | 格式化工具   | `DeepThinkResultFormatter`                      | 结果格式化       |
+| `deep_think/utils.py`        | 工具函数    | `DefaultJSONParser`, `MemoryCacheManager`       | JSON解析、缓存管理 |
 
 ---
 
@@ -521,89 +533,117 @@ manager.clear_history()
 
 ---
 
-## deep_think.py
+## deep_think/ 模块化深度思考系统
 
-### 模块职责
+### 模块化架构
 
-- 实现多阶段推理系统（深度思考模式）
-- 管理 4 个推理阶段：Plan → Solve → Synthesize → Review
-- 提供结构化数据模型（dataclass）
-- 实现 Prompt 模板管理
+深度思考系统已重构为模块化架构，遵循 SOLID 原则：
 
-### 核心类
+```
+src/deep_think/
+├── __init__.py              # 包导出（保持向后兼容）
+├── core/                    # 核心接口和抽象
+│   ├── __init__.py
+│   ├── interfaces.py       # 抽象基类和接口
+│   └── models.py          # 数据模型定义
+├── stages/                  # 阶段处理器
+│   ├── __init__.py
+│   ├── base.py            # 阶段基类
+│   ├── planner.py         # Plan阶段
+│   ├── solver.py          # Solve阶段
+│   ├── synthesizer.py     # Synthesize阶段
+│   └── reviewer.py        # Review阶段
+├── prompts/                # 提示模板
+│   ├── __init__.py
+│   ├── base.py            # 模板基类
+│   ├── templates.py       # 具体模板
+│   └── manager.py         # 模板管理器
+├── orchestrator.py         # 编排器（重构）
+├── formatter.py           # 格式化工具
+└── utils.py               # 工具函数
+```
 
-#### DeepThinkOrchestrator
+### 设计原则应用
+
+1. **单一职责原则 (S)**: 每个模块/类只负责一个功能
+2. **开闭原则 (O)**: 通过接口和抽象基类支持扩展
+3. **里氏替换原则 (L)**: 阶段处理器可替换基类
+4. **接口隔离原则 (I)**: 每个接口小而专一
+5. **依赖倒置原则 (D)**: 依赖抽象而非具体实现
+
+### 核心接口
+
+#### ILLMService (LLM服务接口)
+```python
+class ILLMService(ABC):
+    @abstractmethod
+    def chat_completion(self, messages, model, **kwargs) -> Any:
+        pass
+```
+
+#### IStageProcessor (阶段处理器接口)
 
 ```python
-class DeepThinkOrchestrator:
-    """深度思考编排器 - 管理多阶段推理流程"""
-
-    def __init__(
-        self,
-        api_service,           # MultiProviderAPIService 实例
-        model: str,            # 使用的模型
-        max_subtasks: int = 6, # 最大子任务数
-        enable_review: bool = True,  # 是否启用审查
-        verbose: bool = True,  # 是否输出详细日志
-        system_instruction: str = None,
-        temperature: float = None,
-        top_p: float = None,
-        max_tokens: int = None
-    ):
+class IStageProcessor(ABC):
+    @abstractmethod
+    def get_stage(self) -> ThinkingStage:
         pass
 
-    def run(self, question: str) -> DeepThinkResult:
-        """执行完整的深度思考流程"""
-        # 1. Plan 阶段
-        plan = self._plan(question)
+    @abstractmethod
+    def execute(self, context: StageContext, **kwargs) -> StageResult:
+        pass
+```
 
-        # 2. Solve 阶段（逐个子任务）
-        subtask_results = []
-        for subtask in plan.subtasks:
-            result = self._solve_subtask(subtask, question, subtask_results)
-            subtask_results.append(result)
+#### IPromptTemplate (提示模板接口)
 
-        # 3. Synthesize 阶段
-        final_answer = self._synthesize(question, plan, subtask_results)
+```python
+class IPromptTemplate(ABC):
+    @abstractmethod
+    def get_name(self) -> str:
+        pass
 
-        # 4. Review 阶段（可选）
-        review_result = None
-        if self.enable_review:
-            review_result = self._review(question, final_answer)
-
-        return DeepThinkResult(...)
+    @abstractmethod
+    def format(self, **kwargs) -> str:
+        pass
 ```
 
 ### 数据模型
 
-#### Plan（规划结果）
+#### ThinkingStage (思考阶段枚举)
 
+```python
+class ThinkingStage(Enum):
+    PLAN = "plan"
+    SOLVE = "solve"
+    SYNTHESIZE = "synthesize"
+    REVIEW = "review"
+```
+
+#### Plan (规划结果)
 ```python
 @dataclass
 class Plan:
-    clarified_question: str      # 澄清后的问题
-    subtasks: List[Subtask]      # 子任务列表
-    plan_text: str               # 规划说明
-    reasoning_approach: str = "" # 推理策略
+    clarified_question: str
+    subtasks: List[Subtask]
+    plan_text: str
+    reasoning_approach: str = ""
 ```
 
-#### SubtaskResult（子任务结果）
-
+#### SubtaskResult (子任务结果)
 ```python
 @dataclass
 class SubtaskResult:
     subtask_id: int
     description: str
-    analysis: str                 # 分析过程
-    intermediate_conclusion: str  # 中间结论
-    confidence: float             # 置信度 (0.0-1.0)
-    limitations: List[str]        # 局限性
-    needs_external_info: bool = False       # 是否需要外部信息
-    suggested_tools: List[str] = []         # 建议的工具
+    analysis: str
+    intermediate_conclusion: str
+    confidence: float
+    limitations: List[str] = field(default_factory=list)
+    needs_external_info: bool = False
+    suggested_tools: List[str] = field(default_factory=list)
 ```
 
-#### DeepThinkResult（完整结果）
-
+#### DeepThinkResult (完整结果)
 ```python
 @dataclass
 class DeepThinkResult:
@@ -616,44 +656,154 @@ class DeepThinkResult:
     thinking_process_summary: str = ""
 ```
 
-#### ReviewResult（审查结果）
+### 阶段处理器
 
+#### BaseStageProcessor (基类)
 ```python
-@dataclass
-class ReviewResult:
-    issues_found: List[str]
-    improvement_suggestions: List[str]
-    overall_quality_score: float  # 0.0-1.0
-    review_notes: str
+class BaseStageProcessor(IStageProcessor):
+    def __init__(self, llm_service, json_parser, verbose=True):
+        self.llm_service = llm_service
+        self.json_parser = json_parser
+        self.verbose = verbose
+
+    @abstractmethod
+    def get_stage(self) -> ThinkingStage:
+        pass
+
+    @abstractmethod
+    def execute(self, context: StageContext, **kwargs) -> StageResult:
+        pass
 ```
 
-### Prompt 模板
+#### 具体阶段处理器
 
-#### PromptTemplates
+- **PlannerStageProcessor**: 规划阶段，负责问题澄清和子任务拆解
+- **SolverStageProcessor**: 解决阶段，负责逐个分析子任务
+- **SynthesizerStageProcessor**: 整合阶段，负责综合所有结论生成最终答案
+- **ReviewerStageProcessor**: 审查阶段，负责对最终答案进行质量审查
+
+### 提示模板系统
+
+#### BasePromptTemplate (基类)
 
 ```python
-class PromptTemplates:
-    """Prompt 模板集合"""
+class BasePromptTemplate(IPromptTemplate):
+    def __init__(self, name: str, stage: ThinkingStage, template: str):
+        self._name = name
+        self._stage = stage
+        self._template = template
 
-    PLAN_PROMPT = """你是一个专业的问题分析专家。请对以下问题进行深度分析和规划。
+    def format(self, **kwargs) -> str:
+        return self._template.format(**kwargs)
+```
 
-**用户问题:**
-{question}
+#### 具体模板
 
-**任务要求:**
-1. 理解并澄清问题的核心意图
-2. 将复杂问题拆解为3-6个可管理的子任务
-3. 为每个子任务设定优先级(high/medium/low)
-4. 规划合理的推理路径
+- **PlanPromptTemplate**: 规划阶段提示模板
+- **SubtaskPromptTemplate**: 子任务分析提示模板
+- **SynthesizePromptTemplate**: 整合阶段提示模板
+- **ReviewPromptTemplate**: 审查阶段提示模板
 
-**输出要求:**
-请以JSON格式输出，严格遵循以下结构:
-...
-"""
+#### PromptTemplateManager (管理器)
 
-    SUBTASK_PROMPT = """..."""
-    SYNTHESIZE_PROMPT = """..."""
-    REVIEW_PROMPT = """..."""
+```python
+class PromptTemplateManager:
+    def __init__(self):
+        self._templates: Dict[str, IPromptTemplate] = {}
+        self._stage_templates: Dict[ThinkingStage, IPromptTemplate] = {}
+        self._initialize_default_templates()
+
+    def register_template(self, template: IPromptTemplate) -> None:
+        pass
+
+    def get_template_by_stage(self, stage: ThinkingStage) -> Optional[IPromptTemplate]:
+        pass
+```
+
+### 编排器 (DeepThinkOrchestrator)
+
+```python
+class DeepThinkOrchestrator(IOrchestrator):
+    def __init__(
+        self,
+        api_service: ILLMService,
+        model: str,
+        max_subtasks: int = 6,
+        enable_review: bool = True,
+        verbose: bool = True,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ):
+        # 初始化所有组件
+        self.json_parser = DefaultJSONParser()
+        self.cache_manager = MemoryCacheManager()
+        self.prompt_manager = PromptTemplateManager()
+        self._initialize_stage_processors()
+
+    def run(self, question: str, **kwargs) -> DeepThinkResult:
+        # 1. 创建执行上下文
+        context = self._create_context()
+
+        # 2. 执行规划阶段
+        plan = self._execute_plan_stage(context, question)
+
+        # 3. 执行解决阶段
+        subtask_results = self._execute_solve_stage(context, question, plan)
+
+        # 4. 执行整合阶段
+        final_answer = self._execute_synthesize_stage(context, question, plan, subtask_results)
+
+        # 5. 执行审查阶段（可选）
+        review_result = None
+        if self.enable_review:
+            review_result = self._execute_review_stage(context, question, final_answer)
+
+        # 6. 返回完整结果
+        return DeepThinkResult(...)
+```
+
+### 工具类
+
+#### DefaultJSONParser (JSON解析器)
+
+```python
+class DefaultJSONParser(IJSONParser):
+    def parse(self, response: str) -> Dict[str, Any]:
+        # 支持容错处理：直接解析、提取代码块、查找花括号内容
+        pass
+```
+
+#### MemoryCacheManager (缓存管理器)
+
+```python
+class MemoryCacheManager(ICacheManager):
+    def __init__(self):
+        self._cache: Dict[str, Any] = {}
+        self._lock = threading.Lock()
+
+    def get(self, key: str) -> Any:
+        pass
+
+    def set(self, key: str, value: Any) -> None:
+        pass
+```
+
+### 格式化工具
+
+#### DeepThinkResultFormatter
+
+```python
+class DeepThinkResultFormatter(IResultFormatter):
+    def format(self, result: DeepThinkResult, **kwargs) -> str:
+        # 格式化深度思考结果为用户友好的Markdown输出
+        pass
+
+# 兼容旧接口
+def format_deep_think_result(result: DeepThinkResult, include_process: bool = True) -> str:
+    formatter = DeepThinkResultFormatter()
+    return formatter.format(result, include_process=include_process)
 ```
 
 ### 工作流程
@@ -661,93 +811,32 @@ class PromptTemplates:
 ```
 用户问题
     ↓
-【Stage 1: Plan】
+【Stage 1: Plan】→ PlannerStageProcessor
     ↓
-    问题澄清 + 子任务拆解
+    问题澄清 + 子任务拆解 → Plan
     ↓
-【Stage 2: Solve】
+【Stage 2: Solve】→ SolverStageProcessor
     ↓
-    ├─ 子任务 1 分析
+    ├─ 子任务 1 分析 → SubtaskResult
     ├─ 子任务 2 分析（基于前序结果）
     ├─ 子任务 3 分析
     └─ ...
     ↓
-【Stage 3: Synthesize】
+【Stage 3: Synthesize】→ SynthesizerStageProcessor
     ↓
     整合所有子任务结论 → 最终答案
     ↓
-【Stage 4: Review】（可选）
+【Stage 4: Review】（可选）→ ReviewerStageProcessor
     ↓
-    质量审查 + 改进建议
+    质量审查 + 改进建议 → ReviewResult
     ↓
-DeepThinkResult
+DeepThinkResult → DeepThinkResultFormatter → 用户输出
 ```
 
-### JSON 解析容错
+### 使用示例（保持向后兼容）
 
 ```python
-def _parse_json_response(self, response: str) -> Dict:
-    """解析 JSON 响应，支持容错处理"""
-
-    # 1. 尝试直接解析
-    try:
-        return json.loads(response)
-    except: pass
-
-    # 2. 尝试提取 ```json``` 代码块
-    if "```json" in response:
-        json_block = response.split("```json")[1].split("```")[0].strip()
-        try:
-            return json.loads(json_block)
-        except: pass
-
-    # 3. 尝试查找花括号内的内容
-    start = response.find("{")
-    end = response.rfind("}") + 1
-    if start != -1 and end > start:
-        try:
-            return json.loads(response[start:end])
-        except: pass
-
-    # 4. 如果都失败，抛出异常
-    raise ValueError("无法解析JSON响应")
-```
-
-### 格式化输出
-
-```python
-def format_deep_think_result(
-    result: DeepThinkResult,
-    include_process: bool = True
-) -> str:
-    """格式化深度思考结果为用户友好的 Markdown 输出"""
-
-    output = []
-
-    # 主要答案
-    output.append("# 💡 深度思考结果\n")
-    output.append(result.final_answer)
-
-    # 思考过程（可选）
-    if include_process:
-        output.append(f"\n\n{result.thinking_process_summary}")
-
-    # 审查结果（如果有）
-    if result.review:
-        output.append("\n\n## 🔍 质量审查")
-        output.append(f"**整体评分:** {result.review.overall_quality_score:.0%}")
-        # ...
-
-    # 元信息
-    output.append(f"\n\n---\n*深度思考模式 | LLM调用次数: {result.total_llm_calls}*")
-
-    return "\n".join(output)
-```
-
-### 使用示例
-
-```python
-from src.api_service import api_service
+# 旧代码仍然有效
 from src.deep_think import DeepThinkOrchestrator, format_deep_think_result
 
 # 创建编排器
@@ -766,12 +855,36 @@ result = orchestrator.run(question)
 # 格式化输出
 formatted = format_deep_think_result(result, include_process=True)
 print(formatted)
+```
 
-# 访问详细数据
-print(f"子任务数量: {len(result.subtask_results)}")
-print(f"LLM 调用次数: {result.total_llm_calls}")
-if result.review:
-    print(f"质量评分: {result.review.overall_quality_score:.2%}")
+### 扩展新功能
+
+#### 添加新的阶段处理器
+
+```python
+class CustomStageProcessor(BaseStageProcessor):
+    def get_stage(self) -> ThinkingStage:
+        return ThinkingStage.CUSTOM
+
+    def execute(self, context: StageContext, **kwargs) -> StageResult:
+        # 自定义逻辑
+        pass
+```
+
+#### 添加新的提示模板
+
+```python
+class CustomPromptTemplate(BasePromptTemplate):
+    def __init__(self):
+        template = """自定义模板内容 {param1} {param2}"""
+        super().__init__("custom_prompt", ThinkingStage.CUSTOM, template)
+```
+
+#### 注册到系统
+
+```python
+# 在编排器中扩展
+orchestrator.prompt_manager.register_template(CustomPromptTemplate())
 ```
 
 ### 性能指标
@@ -779,24 +892,16 @@ if result.review:
 - **LLM 调用次数**: 5-9 次（1 规划 + N 分析 + 1 整合 + 1 审查）
 - **Token 消耗**: 约 12,000 tokens/会话
 - **响应时间**: 30-180 秒
-- **成本**: < $0.01/次（Cerebras）
+- **内存缓存**: 支持中间结果缓存，减少重复计算
+- **扩展性**: 模块化设计，易于添加新阶段和功能
 
-### 扩展点
+### 优势
 
-系统预留了工具调用接口：
-
-```python
-# SubtaskResult 中的扩展字段
-needs_external_info: bool = False       # 标记是否需要外部信息
-suggested_tools: List[str] = []         # 建议的工具（如 "search", "rag"）
-```
-
-未来可在 `_solve_subtask` 中集成：
-
-- 搜索引擎
-- RAG 系统
-- 代码执行
-- API 调用
+1. **可维护性**: 模块分离，职责清晰
+2. **可测试性**: 每个模块可独立测试
+3. **可扩展性**: 通过接口和抽象基类支持扩展
+4. **灵活性**: 可替换具体实现，如使用不同的JSON解析器或缓存策略
+5. **向后兼容**: 保持原有API不变，现有代码无需修改
 
 ---
 
@@ -821,10 +926,38 @@ from .providers import ProviderFactory
 # chat_manager.py - 无依赖
 from typing import List, Dict, Any
 
-# deep_think.py - 依赖 api_service（通过参数注入）
+# deep_think/ - 依赖 api_service（通过参数注入）
+# deep_think/core/ - 核心接口和模型
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+# deep_think/stages/ - 阶段处理器
+from ..core.interfaces import ILLMService, IJSONParser, IStageProcessor
+from ..core.models import StageContext, StageResult, ThinkingStage
+
+# deep_think/prompts/ - 提示模板
+from ..core.interfaces import IPromptTemplate
+from ..core.models import ThinkingStage
+
+# deep_think/orchestrator.py - 编排器
+from .core.interfaces import ILLMService, IOrchestrator
+from .core.models import DeepThinkResult, Plan, ReviewResult, StageContext, SubtaskResult
+from .prompts.manager import PromptTemplateManager
+from .stages import PlannerStageProcessor, SolverStageProcessor, SynthesizerStageProcessor, ReviewerStageProcessor
+from .utils import DefaultJSONParser, MemoryCacheManager, generate_cache_key
+
+# deep_think/formatter.py - 格式化工具
+from .core.interfaces import IResultFormatter
+from .core.models import DeepThinkResult
+
+# deep_think/utils.py - 工具函数
+import hashlib
 import json
-import logging
-from dataclasses import dataclass
+import threading
+from typing import Any, Dict
+from .core.interfaces import ICacheManager, IJSONParser
 ```
 
 ### 初始化顺序
@@ -834,7 +967,13 @@ from dataclasses import dataclass
 2. providers.py 定义提供商类
 3. api_service.py 创建全局单例（初始化提供商）
 4. chat_manager.py 独立初始化
-5. deep_think.py 接收 api_service 实例
+5. deep_think/ 模块初始化：
+   a. core/ 定义接口和模型
+   b. prompts/ 初始化模板管理器
+   c. utils/ 初始化工具类
+   d. stages/ 初始化阶段处理器
+   e. orchestrator.py 创建编排器实例
+6. 应用层使用 DeepThinkOrchestrator 接收 api_service 实例
 ```
 
 ---
@@ -858,29 +997,83 @@ PROVIDER_MODELS["cerebras"].append("new-model-name")
 
 ### 修改深度思考
 
-**调整 Prompt**：
+#### 调整 Prompt 模板
 
 ```python
-# src/deep_think.py
-class PromptTemplates:
-    PLAN_PROMPT = """修改后的 Prompt..."""
+# src/deep_think/prompts/templates.py
+class PlanPromptTemplate(BasePromptTemplate):
+    def __init__(self):
+        template = """修改后的 Prompt..."""
+        super().__init__("plan_prompt", ThinkingStage.PLAN, template)
+
+# 或者通过模板管理器动态注册
+from src.deep_think.prompts.manager import PromptTemplateManager
+from src.deep_think.prompts.base import BasePromptTemplate
+from src.deep_think.core.models import ThinkingStage
+
+class CustomPromptTemplate(BasePromptTemplate):
+    def __init__(self):
+        template = """自定义模板内容"""
+        super().__init__("custom_prompt", ThinkingStage.PLAN, template)
+
+manager = PromptTemplateManager()
+manager.register_template(CustomPromptTemplate())
 ```
 
-**修改阶段逻辑**：
+#### 修改阶段逻辑
 
 ```python
-# src/deep_think.py
-class DeepThinkOrchestrator:
-    def _plan(self, question: str) -> Plan:
-        # 修改规划逻辑
+# src/deep_think/stages/planner.py
+class CustomPlannerStageProcessor(PlannerStageProcessor):
+    def execute(self, context: StageContext, **kwargs) -> StageResult:
+        # 自定义规划逻辑
         pass
+
+
+# 在编排器中使用自定义处理器
+orchestrator.planner = CustomPlannerStageProcessor(
+    llm_service=orchestrator.api_service,
+    json_parser=orchestrator.json_parser,
+    prompt_template=orchestrator.prompt_manager.get_template_by_stage(ThinkingStage.PLAN),
+    max_subtasks=orchestrator.max_subtasks,
+    verbose=orchestrator.verbose,
+)
+```
+
+#### 添加新的阶段
+
+```python
+# 1. 定义新的阶段枚举
+from src.deep_think.core.models import ThinkingStage
+# 注意：需要扩展ThinkingStage枚举或使用字符串标识
+
+# 2. 创建新的阶段处理器
+from src.deep_think.stages.base import BaseStageProcessor
+
+
+class CustomStageProcessor(BaseStageProcessor):
+    def get_stage(self) -> str:  # 或扩展ThinkingStage
+        return "custom_stage"
+
+    def execute(self, context: StageContext, **kwargs) -> StageResult:
+        # 自定义阶段逻辑
+        pass
+
+# 3. 在编排器中集成新阶段
 ```
 
 ### 测试建议
 
-- **单元测试**: 测试 `config.py` 工具函数
-- **集成测试**: 测试 `api_service.py` 提供商路由
-- **端到端测试**: 测试 `deep_think.py` 完整流程
+- **单元测试**:
+    - 测试 `config.py` 工具函数
+    - 测试各个阶段处理器的独立功能
+    - 测试提示模板的格式化
+- **集成测试**:
+    - 测试 `api_service.py` 提供商路由
+    - 测试阶段处理器与LLM服务的集成
+- **端到端测试**:
+    - 测试 `deep_think/` 模块完整流程
+    - 测试编排器的整体协调功能
 
 ---
 
