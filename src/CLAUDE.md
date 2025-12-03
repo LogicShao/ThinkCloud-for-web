@@ -342,17 +342,17 @@ class MultiProviderAPIService:
         # 打印初始化状态：[SUCCESS] 或 [FAILED]
 
     def chat_completion(
-        self,
-        messages,
-        model,
-        system_instruction=None,
-        temperature=None,
-        top_p=None,
-        max_tokens=None,
-        frequency_penalty=None,
-        presence_penalty=None,
-        stream=False,
-        **kwargs
+            self,
+            messages,
+            model,
+            system_instruction=None,
+            temperature=None,
+            top_p=None,
+            max_tokens=None,
+            frequency_penalty=None,
+            presence_penalty=None,
+            stream=False,
+            **kwargs
     ):
         """
         调用聊天完成 API
@@ -574,6 +574,7 @@ src/deep_think/
 ### 核心接口
 
 #### ILLMService (LLM服务接口)
+
 ```python
 class ILLMService(ABC):
     @abstractmethod
@@ -620,6 +621,7 @@ class ThinkingStage(Enum):
 ```
 
 #### Plan (规划结果)
+
 ```python
 @dataclass
 class Plan:
@@ -630,6 +632,7 @@ class Plan:
 ```
 
 #### SubtaskResult (子任务结果)
+
 ```python
 @dataclass
 class SubtaskResult:
@@ -644,6 +647,7 @@ class SubtaskResult:
 ```
 
 #### DeepThinkResult (完整结果)
+
 ```python
 @dataclass
 class DeepThinkResult:
@@ -659,6 +663,7 @@ class DeepThinkResult:
 ### 阶段处理器
 
 #### BaseStageProcessor (基类)
+
 ```python
 class BaseStageProcessor(IStageProcessor):
     def __init__(self, llm_service, json_parser, verbose=True):
@@ -1006,15 +1011,18 @@ class PlanPromptTemplate(BasePromptTemplate):
         template = """修改后的 Prompt..."""
         super().__init__("plan_prompt", ThinkingStage.PLAN, template)
 
+
 # 或者通过模板管理器动态注册
 from src.deep_think.prompts.manager import PromptTemplateManager
 from src.deep_think.prompts.base import BasePromptTemplate
 from src.deep_think.core.models import ThinkingStage
 
+
 class CustomPromptTemplate(BasePromptTemplate):
     def __init__(self):
         template = """自定义模板内容"""
         super().__init__("custom_prompt", ThinkingStage.PLAN, template)
+
 
 manager = PromptTemplateManager()
 manager.register_template(CustomPromptTemplate())

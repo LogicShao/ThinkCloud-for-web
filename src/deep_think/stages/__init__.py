@@ -12,7 +12,7 @@ from .synthesizer import SynthesizerStageProcessor
 __all__ = [
     "BaseStageProcessor",
     "PlannerStageProcessor",
+    "ReviewerStageProcessor",
     "SolverStageProcessor",
     "SynthesizerStageProcessor",
-    "ReviewerStageProcessor",
 ]

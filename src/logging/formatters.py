@@ -15,13 +15,13 @@ class ColorFormatter(logging.Formatter):
 
     # 颜色代码
     COLORS = {
-        'TRACE': '\033[90m',  # 灰色
-        'DEBUG': '\033[36m',  # 青色
-        'INFO': '\033[32m',  # 绿色
-        'WARN': '\033[33m',  # 黄色
-        'ERROR': '\033[31m',  # 红色
-        'CRITICAL': '\033[35m',  # 紫色
-        'RESET': '\033[0m'  # 重置颜色
+        "TRACE": "\033[90m",  # 灰色
+        "DEBUG": "\033[36m",  # 青色
+        "INFO": "\033[32m",  # 绿色
+        "WARN": "\033[33m",  # 黄色
+        "ERROR": "\033[31m",  # 红色
+        "CRITICAL": "\033[35m",  # 紫色
+        "RESET": "\033[0m",  # 重置颜色
     }
 
     def __init__(self, fmt: Optional[str] = None, datefmt: Optional[str] = None):
@@ -36,7 +36,7 @@ class ColorFormatter(logging.Formatter):
         # 添加颜色
         if original_levelname in self.COLORS:
             color = self.COLORS[original_levelname]
-            reset = self.COLORS['RESET']
+            reset = self.COLORS["RESET"]
             record.levelname = f"{color}{original_levelname}{reset}"
 
         # 格式化消息
@@ -75,13 +75,13 @@ class JSONFormatter(logging.Formatter):
             log_data["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
-                "traceback": traceback.format_exception(*record.exc_info)
+                "traceback": traceback.format_exception(*record.exc_info),
             }
 
         # 添加额外的字段
-        if self.include_extra and hasattr(record, '__dict__'):
+        if self.include_extra and hasattr(record, "__dict__"):
             for key, value in record.__dict__.items():
-                if key not in log_data and not key.startswith('_'):
+                if key not in log_data and not key.startswith("_"):
                     # 尝试序列化值
                     try:
                         json.dumps(value)

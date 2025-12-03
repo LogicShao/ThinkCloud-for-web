@@ -4,20 +4,20 @@
 """
 
 from datetime import datetime
-from typing import List, Dict, Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from src.chat_manager import ChatManager
-from src.response_handlers import ResponseHandler, DeepThinkHandler
+from src.response_handlers import DeepThinkHandler, ResponseHandler
 
 
 class EventHandlers:
     """事件处理器类 - 处理所有Gradio事件"""
 
     def __init__(
-            self,
-            chat_manager: ChatManager,
-            response_handler: ResponseHandler,
-            deep_think_handler: DeepThinkHandler,
+        self,
+        chat_manager: ChatManager,
+        response_handler: ResponseHandler,
+        deep_think_handler: DeepThinkHandler,
     ):
         """
         初始化事件处理器
@@ -32,29 +32,30 @@ class EventHandlers:
         self.deep_think_handler = deep_think_handler
 
     def setup_all_events(
-            self,
-            demo,
-            msg,
-            chatbot,
-            provider_dropdown,
-            model_dropdown,
-            submit_btn,
-            clear_btn,
-            export_btn,
-            status_html,
-            enable_streaming,
-            system_instruction,
-            temperature,
-            top_p,
-            max_tokens,
-            frequency_penalty,
-            presence_penalty,
-            deep_think_enabled,
-            enable_review,
-            show_thinking_process,
-            max_subtasks,
-            update_models_fn: Callable,
-            update_status_fn: Callable,
+        self,
+        demo,
+        msg,
+        chatbot,
+        provider_dropdown,
+        model_dropdown,
+        submit_btn,
+        clear_btn,
+        export_btn,
+        status_html,
+        enable_streaming,
+        system_instruction,
+        temperature,
+        top_p,
+        max_tokens,
+        frequency_penalty,
+        presence_penalty,
+        deep_think_enabled,
+        enable_review,
+        enable_web_search,
+        show_thinking_process,
+        max_subtasks,
+        update_models_fn: Callable,
+        update_status_fn: Callable,
     ):
         """
         绑定所有事件处理器
@@ -78,6 +79,7 @@ class EventHandlers:
             presence_penalty: 存在惩罚滑块
             deep_think_enabled: 深度思考复选框
             enable_review: 审查复选框
+            enable_web_search: 网络搜索复选框
             show_thinking_process: 显示过程复选框
             max_subtasks: 最大子任务数滑块
             update_models_fn: 更新模型列表函数
@@ -107,19 +109,20 @@ class EventHandlers:
             return "", new_history
 
         def bot_message(
-                history,
-                model,
-                enable_stream,
-                sys_inst,
-                temp,
-                top_p_val,
-                max_tok,
-                freq_pen,
-                pres_pen,
-                deep_think_mode,
-                review_enabled,
-                show_process,
-                max_tasks,
+            history,
+            model,
+            enable_stream,
+            sys_inst,
+            temp,
+            top_p_val,
+            max_tok,
+            freq_pen,
+            pres_pen,
+            deep_think_mode,
+            review_enabled,
+            web_search_enabled,
+            show_process,
+            max_tasks,
         ):
             """获取机器人回复"""
             if not history:
@@ -149,6 +152,7 @@ class EventHandlers:
                     last_user_msg=last_user_msg,
                     start_time=start_time,
                     enable_review=review_enabled,
+                    enable_web_search=web_search_enabled,
                     show_process=show_process,
                     max_tasks=max_tasks,
                     time_str=time_str,
@@ -190,7 +194,9 @@ class EventHandlers:
             return export_text
 
         # 提供商变更事件 - 更新模型列表
-        provider_dropdown.change(update_models_fn, inputs=[provider_dropdown], outputs=[model_dropdown])
+        provider_dropdown.change(
+            update_models_fn, inputs=[provider_dropdown], outputs=[model_dropdown]
+        )
 
         # 消息提交事件
         msg.submit(
@@ -212,6 +218,7 @@ class EventHandlers:
                 presence_penalty,
                 deep_think_enabled,
                 enable_review,
+                enable_web_search,
                 show_thinking_process,
                 max_subtasks,
             ],
@@ -238,6 +245,7 @@ class EventHandlers:
                 presence_penalty,
                 deep_think_enabled,
                 enable_review,
+                enable_web_search,
                 show_thinking_process,
                 max_subtasks,
             ],

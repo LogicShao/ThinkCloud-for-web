@@ -2,11 +2,14 @@
 测试优化后的模型选择功能
 """
 
-import io
 import sys
 
-# 设置UTF-8输出
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+# 只在直接运行时设置UTF-8输出
+if __name__ == "__main__":
+    import io
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+
 
 from src.config import (
     extract_model_id,

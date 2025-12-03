@@ -6,7 +6,7 @@ UI客户端 - 协调界面组件、事件处理器和响应处理器
 from src.api_service import api_service
 from src.chat_manager import ChatManager
 from src.event_handlers import EventHandlers
-from src.response_handlers import ResponseHandler, DeepThinkHandler
+from src.response_handlers import DeepThinkHandler, ResponseHandler
 from src.ui_composer import UIComposer
 
 

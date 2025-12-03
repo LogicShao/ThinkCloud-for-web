@@ -9,8 +9,9 @@ import sys
 # 添加父目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 设置UTF-8输出
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+# 只在直接运行时设置UTF-8输出
+if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
 def test_ui_components():

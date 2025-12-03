@@ -7,7 +7,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from ..core.interfaces import ILLMService, IJSONParser, IStageProcessor
+from ..core.interfaces import IJSONParser, ILLMService, IStageProcessor
 from ..core.models import StageContext, StageResult, ThinkingStage
 
 logger = logging.getLogger(__name__)
@@ -17,10 +17,10 @@ class BaseStageProcessor(IStageProcessor):
     """阶段处理器基类"""
 
     def __init__(
-            self,
-            llm_service: ILLMService,
-            json_parser: IJSONParser,
-            verbose: bool = True,
+        self,
+        llm_service: ILLMService,
+        json_parser: IJSONParser,
+        verbose: bool = True,
     ):
         """
         初始化阶段处理器
@@ -46,11 +46,11 @@ class BaseStageProcessor(IStageProcessor):
         pass
 
     def _call_llm(
-            self,
-            prompt: str,
-            context: StageContext,
-            stage: ThinkingStage,
-            system_instruction: Optional[str] = None,
+        self,
+        prompt: str,
+        context: StageContext,
+        stage: ThinkingStage,
+        system_instruction: Optional[str] = None,
     ) -> str:
         """调用LLM"""
         context.llm_call_count += 1
@@ -71,7 +71,7 @@ class BaseStageProcessor(IStageProcessor):
         )
 
         # 确保返回的是字符串类型
-        if hasattr(response, '__iter__') and not isinstance(response, (str, bytes)):
+        if hasattr(response, "__iter__") and not isinstance(response, (str, bytes)):
             if self.verbose:
                 self.logger.warning(f"[LLM CALL] 检测到生成器响应，类型: {type(response).__name__}")
             try:
@@ -81,24 +81,28 @@ class BaseStageProcessor(IStageProcessor):
                     if self.verbose and i < 3:
                         chunk_type = type(chunk).__name__
                         chunk_preview = str(chunk)[:100]
-                        self.logger.debug(f"[LLM CALL] Chunk {i} 类型: {chunk_type}, 内容预览: {chunk_preview}")
+                        self.logger.debug(
+                            f"[LLM CALL] Chunk {i} 类型: {chunk_type}, 内容预览: {chunk_preview}"
+                        )
 
                     # 尝试多种方式提取内容
                     if isinstance(chunk, str):
                         chunks.append(chunk)
-                    elif hasattr(chunk, 'content'):
-                        chunks.append(chunk.content if chunk.content else '')
-                    elif hasattr(chunk, 'text'):
-                        chunks.append(chunk.text if chunk.text else '')
-                    elif hasattr(chunk, 'delta') and hasattr(chunk.delta, 'content'):
-                        chunks.append(chunk.delta.content if chunk.delta.content else '')
+                    elif hasattr(chunk, "content"):
+                        chunks.append(chunk.content if chunk.content else "")
+                    elif hasattr(chunk, "text"):
+                        chunks.append(chunk.text if chunk.text else "")
+                    elif hasattr(chunk, "delta") and hasattr(chunk.delta, "content"):
+                        chunks.append(chunk.delta.content if chunk.delta.content else "")
                     else:
                         chunks.append(str(chunk))
 
-                response = ''.join(chunks)
+                response = "".join(chunks)
 
                 if self.verbose:
-                    self.logger.info(f"[LLM CALL] 生成器转换完成，共{len(chunks)}个chunk，总长度: {len(response)}")
+                    self.logger.info(
+                        f"[LLM CALL] 生成器转换完成，共{len(chunks)}个chunk，总长度: {len(response)}"
+                    )
             except Exception as e:
                 error_msg = f"无法将生成器转换为字符串: {e}"
                 self.logger.error(f"[LLM CALL] {error_msg}")
@@ -110,13 +114,17 @@ class BaseStageProcessor(IStageProcessor):
 
         # 调试日志：显示完整响应内容以方便JSON解析调试
         if self.verbose:
-            self.logger.info(f"[LLM CALL] 最终响应类型: {type(response).__name__}, 长度: {len(response)}")
+            self.logger.info(
+                f"[LLM CALL] 最终响应类型: {type(response).__name__}, 长度: {len(response)}"
+            )
 
             # 为了便于日志查看，显示前500字符作为预览
             preview_length = 500
             if len(response) > 0:
-                preview = response[:preview_length].replace('\n', ' ')
-                self.logger.info(f"[LLM RESPONSE PREVIEW] {preview}{'...' if len(response) > preview_length else ''}")
+                preview = response[:preview_length].replace("\n", " ")
+                self.logger.info(
+                    f"[LLM RESPONSE PREVIEW] {preview}{'...' if len(response) > preview_length else ''}"
+                )
             else:
                 self.logger.warning("[LLM RESPONSE PREVIEW] 响应为空字符串！")
 

@@ -1,9 +1,9 @@
 [project]
-name = "SimpleLLMFront"
+name = "ThinkCloud-for-web"
 version = "0.1.0"
 description = "多提供商 LLM 聊天客户端 (ThinkCloud for Web)"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "Misaka Misaka", email = "wyyxshao@163.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.8"
@@ -106,6 +106,5 @@ python_files = ["test_*.py"]
 addopts = [
     "-v",
     "--strict-markers",
-    "--cov=src",
-    "--cov-report=term-missing",
+    "-p no:cov",
 ]

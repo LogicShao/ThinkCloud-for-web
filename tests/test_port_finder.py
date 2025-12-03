@@ -8,8 +8,10 @@ import sys
 import time
 from contextlib import closing
 
-# 设置UTF-8输出
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+# 只在直接运行时设置UTF-8输出
+if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+
 
 from src.config import find_available_port, get_server_port, is_port_available
 

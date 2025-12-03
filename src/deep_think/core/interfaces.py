@@ -22,15 +22,15 @@ class ILLMService(ABC):
 
     @abstractmethod
     def chat_completion(
-            self,
-            messages: List[Dict[str, str]],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            stream: bool = False,
-            **kwargs
+        self,
+        messages: List[Dict[str, str]],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        stream: bool = False,
+        **kwargs,
     ) -> Any:
         """调用LLM聊天完成API"""
         pass

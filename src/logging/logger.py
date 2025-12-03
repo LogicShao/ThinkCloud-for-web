@@ -8,8 +8,8 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional, Union, Callable
 from functools import wraps
+from typing import Any, Callable, Dict, Optional, Union
 
 from .config import LogLevel, get_logger
 
@@ -17,6 +17,7 @@ from .config import LogLevel, get_logger
 @dataclass
 class LogContext:
     """日志上下文，用于传递额外的上下文信息"""
+
     request_id: Optional[str] = None
     user_id: Optional[str] = None
     session_id: Optional[str] = None
@@ -114,7 +115,9 @@ class EnhancedLogger:
         if self._context.session_id:
             context_parts.append(f"session_id={self._context.session_id}")
         if self._context.module:
-            context_parts.append(f"context_module={self._context.module}")  # 使用 context_module 保持一致
+            context_parts.append(
+                f"context_module={self._context.module}"
+            )  # 使用 context_module 保持一致
         if self._context.stage:
             context_parts.append(f"stage={self._context.stage}")
         if self._context.subtask_id is not None:
@@ -127,14 +130,14 @@ class EnhancedLogger:
             if isinstance(value, (str, int, float, bool)):
                 context_parts.append(f"{key}={value}")
             else:
-                context_parts.append(f"{key}={str(value)}")
+                context_parts.append(f"{key}={value!s}")
 
         # 添加额外的关键字参数
         for key, value in kwargs.items():
             if isinstance(value, (str, int, float, bool)):
                 context_parts.append(f"{key}={value}")
             else:
-                context_parts.append(f"{key}={str(value)}")
+                context_parts.append(f"{key}={value!s}")
 
         if context_parts:
             parts.append(f"[{', '.join(context_parts)}]")
@@ -212,10 +215,11 @@ class EnhancedLogger:
 
     def log_exception(self, message: str, exception: Exception, **kwargs):
         """记录异常日志"""
-        self.error(f"{message} | 异常: {type(exception).__name__}: {str(exception)}", **kwargs)
+        self.error(f"{message} | 异常: {type(exception).__name__}: {exception!s}", **kwargs)
 
         # 记录堆栈跟踪（DEBUG级别）
         import traceback
+
         stack_trace = traceback.format_exc()
         self.debug(f"异常堆栈跟踪:\n{stack_trace}")
 
@@ -236,13 +240,15 @@ class EnhancedLogger:
             stage=self._context.stage,
             subtask_id=self._context.subtask_id,
             llm_call_count=self._context.llm_call_count,
-            custom_fields=self._context.custom_fields.copy()
+            custom_fields=self._context.custom_fields.copy(),
         )
         return EnhancedLogger(child_name, child_context)
 
 
 # 装饰器函数
-def log_function_call(logger: Optional[EnhancedLogger] = None, level: Union[LogLevel, int] = LogLevel.DEBUG):
+def log_function_call(
+    logger: Optional[EnhancedLogger] = None, level: Union[LogLevel, int] = LogLevel.DEBUG
+):
     """
     记录函数调用的装饰器
 
@@ -262,10 +268,7 @@ def log_function_call(logger: Optional[EnhancedLogger] = None, level: Union[LogL
 
             # 记录函数开始
             func_logger._log_with_context(
-                level,
-                f"函数调用开始 | {func.__name__}",
-                args=str(args),
-                kwargs=str(kwargs)
+                level, f"函数调用开始 | {func.__name__}", args=str(args), kwargs=str(kwargs)
             )
 
             # 执行函数并计时
@@ -278,7 +281,7 @@ def log_function_call(logger: Optional[EnhancedLogger] = None, level: Union[LogL
                 func_logger._log_with_context(
                     level,
                     f"函数调用结束 | {func.__name__} | 耗时: {elapsed:.3f}s",
-                    result=str(result)[:100]  # 只记录前100个字符
+                    result=str(result)[:100],  # 只记录前100个字符
                 )
 
                 return result
@@ -289,7 +292,7 @@ def log_function_call(logger: Optional[EnhancedLogger] = None, level: Union[LogL
                 # 记录异常
                 func_logger._log_with_context(
                     LogLevel.ERROR,
-                    f"函数调用异常 | {func.__name__} | 耗时: {elapsed:.3f}s | 异常: {type(e).__name__}: {str(e)}"
+                    f"函数调用异常 | {func.__name__} | 耗时: {elapsed:.3f}s | 异常: {type(e).__name__}: {e!s}",
                 )
                 raise
 

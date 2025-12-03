@@ -17,9 +17,9 @@ class DefaultJSONParser(IJSONParser):
     def parse(self, response: str) -> Dict[str, Any]:
         """解析JSON响应，支持容错处理"""
         # 防护：如果收到生成器对象，将其转换为字符串
-        if hasattr(response, '__iter__') and not isinstance(response, (str, bytes)):
+        if hasattr(response, "__iter__") and not isinstance(response, (str, bytes)):
             try:
-                response = ''.join(response)
+                response = "".join(response)
             except Exception as e:
                 raise TypeError(f"响应必须是字符串，而不是 {type(response).__name__}: {e}")
 

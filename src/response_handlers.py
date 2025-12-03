@@ -4,7 +4,7 @@
 """
 
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from src.api_service import api_service
 from src.chat_manager import ChatManager
@@ -24,17 +24,17 @@ class ResponseHandler:
         self.chat_manager = chat_manager
 
     def handle_standard_response(
-            self,
-            history: List[Dict[str, Any]],
-            model: str,
-            enable_stream: bool,
-            start_time: datetime,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
+        self,
+        history: List[Dict[str, Any]],
+        model: str,
+        enable_stream: bool,
+        start_time: datetime,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
     ):
         """
         处理标准模式响应（流式或非流式）
@@ -94,18 +94,18 @@ class ResponseHandler:
             )
 
     def _handle_streaming_response(
-            self,
-            history: List[Dict[str, Any]],
-            api_messages: List[Dict[str, str]],
-            model: str,
-            start_time: datetime,
-            time_str: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
+        self,
+        history: List[Dict[str, Any]],
+        api_messages: List[Dict[str, str]],
+        model: str,
+        start_time: datetime,
+        time_str: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
     ):
         """处理流式传输响应"""
         # 先添加一个空的助手消息
@@ -155,18 +155,18 @@ class ResponseHandler:
         self.chat_manager.add_message("assistant", response_text)
 
     def _handle_non_streaming_response(
-            self,
-            history: List[Dict[str, Any]],
-            api_messages: List[Dict[str, str]],
-            model: str,
-            start_time: datetime,
-            time_str: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
+        self,
+        history: List[Dict[str, Any]],
+        api_messages: List[Dict[str, str]],
+        model: str,
+        start_time: datetime,
+        time_str: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
     ):
         """处理非流式传输响应"""
         try:
@@ -237,19 +237,20 @@ class DeepThinkHandler:
         self.chat_manager = chat_manager
 
     def handle_deep_think_response(
-            self,
-            history: List[Dict[str, Any]],
-            model: str,
-            last_user_msg: str,
-            start_time: datetime,
-            enable_review: bool,
-            show_process: bool,
-            max_tasks: int,
-            time_str: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
+        self,
+        history: List[Dict[str, Any]],
+        model: str,
+        last_user_msg: str,
+        start_time: datetime,
+        enable_review: bool,
+        enable_web_search: bool,
+        show_process: bool,
+        max_tasks: int,
+        time_str: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
     ):
         """
         处理深度思考模式响应
@@ -260,6 +261,7 @@ class DeepThinkHandler:
             last_user_msg: 最后一条用户消息
             start_time: 开始时间
             enable_review: 是否启用审查
+            enable_web_search: 是否启用网络搜索
             show_process: 是否显示过程
             max_tasks: 最大子任务数
             time_str: 时间字符串
@@ -277,6 +279,7 @@ class DeepThinkHandler:
                 model=model,
                 max_subtasks=int(max_tasks),
                 enable_review=enable_review,
+                enable_web_search=enable_web_search,
                 verbose=True,
                 system_instruction=system_instruction,
                 temperature=temperature,

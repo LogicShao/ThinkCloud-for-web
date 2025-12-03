@@ -35,17 +35,18 @@ class DeepThinkOrchestrator(IOrchestrator):
     """深度思考编排器 - 管理多阶段推理流程"""
 
     def __init__(
-            self,
-            api_service: ILLMService,
-            model: str,
-            max_subtasks: int = 6,
-            enable_review: bool = True,
-            verbose: bool = True,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            request_id: Optional[str] = None,
+        self,
+        api_service: ILLMService,
+        model: str,
+        max_subtasks: int = 6,
+        enable_review: bool = True,
+        enable_web_search: bool = False,
+        verbose: bool = True,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        request_id: Optional[str] = None,
     ):
         """
         初始化深度思考编排器
@@ -55,6 +56,7 @@ class DeepThinkOrchestrator(IOrchestrator):
             model: 使用的模型名称
             max_subtasks: 最大子任务数量
             enable_review: 是否启用最终审查
+            enable_web_search: 是否启用网络搜索功能
             verbose: 是否输出详细日志
             system_instruction: 系统提示词
             temperature: 温度参数
@@ -66,6 +68,7 @@ class DeepThinkOrchestrator(IOrchestrator):
         self.model = model
         self.max_subtasks = max_subtasks
         self.enable_review = enable_review
+        self.enable_web_search = enable_web_search
         self.verbose = verbose
 
         # 模型参数
@@ -73,6 +76,20 @@ class DeepThinkOrchestrator(IOrchestrator):
         self.temperature = temperature
         self.top_p = top_p
         self.max_tokens = max_tokens
+
+        # 初始化Web搜索工具
+        self.web_search_tool = None
+        if enable_web_search:
+            try:
+                from src.tools.web_search import WebSearchTool
+
+                self.web_search_tool = WebSearchTool()
+                if not self.web_search_tool.is_available():
+                    print("[WARN] Web搜索工具不可用，请安装: pip install duckduckgo-search")
+                    self.web_search_tool = None
+            except Exception as e:
+                print(f"[ERROR] 初始化Web搜索工具失败: {e}")
+                self.web_search_tool = None
 
         # 初始化日志记录器
         self.logger = get_deep_think_orchestrator_logger(
@@ -84,7 +101,7 @@ class DeepThinkOrchestrator(IOrchestrator):
                     "max_subtasks": max_subtasks,
                     "enable_review": enable_review,
                     "verbose": verbose,
-                }
+                },
             )
         )
 
@@ -99,7 +116,7 @@ class DeepThinkOrchestrator(IOrchestrator):
         # 统计信息
         self.total_llm_calls = 0
 
-        self.logger.info(f"编排器初始化完成")
+        self.logger.info("编排器初始化完成")
 
     def _initialize_stage_processors(self):
         """初始化阶段处理器"""
@@ -123,6 +140,7 @@ class DeepThinkOrchestrator(IOrchestrator):
             json_parser=self.json_parser,
             prompt_template=solve_template,
             verbose=self.verbose,
+            web_search_tool=self.web_search_tool if self.enable_web_search else None,
         )
 
         self.synthesizer = SynthesizerStageProcessor(
@@ -150,7 +168,7 @@ class DeepThinkOrchestrator(IOrchestrator):
         Returns:
             DeepThinkResult: 完整的思考结果
         """
-        self.logger.info(f"开始深度思考流程", question_preview=question[:50])
+        self.logger.info("开始深度思考流程", question_preview=question[:50])
 
         try:
             # 创建执行上下文
@@ -166,7 +184,9 @@ class DeepThinkOrchestrator(IOrchestrator):
 
             # 阶段3: 整合结果
             with self.logger.timer("synthesize_stage"):
-                final_answer = self._execute_synthesize_stage(context, question, plan, subtask_results)
+                final_answer = self._execute_synthesize_stage(
+                    context, question, plan, subtask_results
+                )
 
             # 阶段4: 可选审查
             review_result = None
@@ -191,11 +211,11 @@ class DeepThinkOrchestrator(IOrchestrator):
             )
 
             self.logger.info(
-                f"深度思考流程完成",
+                "深度思考流程完成",
                 total_llm_calls=self.total_llm_calls,
                 subtask_count=len(subtask_results),
                 has_review=review_result is not None,
-                final_answer_length=len(final_answer)
+                final_answer_length=len(final_answer),
             )
 
             # 记录性能数据
@@ -248,7 +268,7 @@ class DeepThinkOrchestrator(IOrchestrator):
         return plan
 
     def _execute_solve_stage(
-            self, context: StageContext, question: str, plan: Plan
+        self, context: StageContext, question: str, plan: Plan
     ) -> list[SubtaskResult]:
         """执行解决阶段"""
         subtask_results = []
@@ -261,7 +281,7 @@ class DeepThinkOrchestrator(IOrchestrator):
             )
 
             if not result.success:
-                self.logger.warning(f"子任务执行失败", subtask_id=subtask.id, error=result.error)
+                self.logger.warning("子任务执行失败", subtask_id=subtask.id, error=result.error)
                 # 继续执行下一个子任务
 
             subtask_results.append(result.data)
@@ -270,11 +290,11 @@ class DeepThinkOrchestrator(IOrchestrator):
         return subtask_results
 
     def _execute_synthesize_stage(
-            self,
-            context: StageContext,
-            question: str,
-            plan: Plan,
-            subtask_results: list[SubtaskResult],
+        self,
+        context: StageContext,
+        question: str,
+        plan: Plan,
+        subtask_results: list[SubtaskResult],
     ) -> str:
         """执行整合阶段"""
         result = self.synthesizer.execute(
@@ -291,7 +311,7 @@ class DeepThinkOrchestrator(IOrchestrator):
         return result.data
 
     def _execute_review_stage(
-            self, context: StageContext, question: str, final_answer: str
+        self, context: StageContext, question: str, final_answer: str
     ) -> ReviewResult:
         """执行审查阶段"""
         result = self.reviewer.execute(
@@ -301,7 +321,7 @@ class DeepThinkOrchestrator(IOrchestrator):
         )
 
         if not result.success:
-            self.logger.warning(f"审查阶段失败", error=result.error)
+            self.logger.warning("审查阶段失败", error=result.error)
             # 返回默认审查结果
             return ReviewResult(
                 issues_found=[],
@@ -323,12 +343,8 @@ class DeepThinkOrchestrator(IOrchestrator):
         ]
 
         for result in subtask_results:
-            # 智能截断：只在超过100字符时才添加省略号
-            conclusion = result.intermediate_conclusion
-            if len(conclusion) > 100:
-                conclusion_display = conclusion[:100] + "..."
-            else:
-                conclusion_display = conclusion
+            # 移除截断限制，显示完整结论
+            conclusion_display = result.intermediate_conclusion
 
             summary_parts.append(
                 f"\n{result.subtask_id}. {result.description}\n"
@@ -356,7 +372,7 @@ class DeepThinkOrchestrator(IOrchestrator):
             total_llm_calls=context.llm_call_count,
             model=self.model,
             max_subtasks=self.max_subtasks,
-            enable_review=self.enable_review
+            enable_review=self.enable_review,
         )
 
     def get_cache_stats(self) -> dict:

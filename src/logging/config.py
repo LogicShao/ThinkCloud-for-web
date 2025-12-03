@@ -14,6 +14,7 @@ from typing import Dict, List, Optional, Union
 
 class LogLevel(IntEnum):
     """自定义日志级别"""
+
     TRACE = 5
     DEBUG = 10
     INFO = 20
@@ -25,6 +26,7 @@ class LogLevel(IntEnum):
 @dataclass
 class LogHandlerConfig:
     """日志处理器配置"""
+
     handler_type: str  # console, file, rotating_file, timed_rotating_file
     level: Union[str, LogLevel] = LogLevel.INFO
     formatter: str = "default"
@@ -43,6 +45,7 @@ class LogHandlerConfig:
 @dataclass
 class LoggerConfig:
     """日志记录器配置"""
+
     name: str
     level: Union[str, LogLevel] = LogLevel.INFO
     handlers: List[str] = field(default_factory=lambda: ["console"])
@@ -75,9 +78,7 @@ class LoggingConfig:
         if not self.handlers:
             self.handlers = {
                 "console": LogHandlerConfig(
-                    handler_type="console",
-                    level=self.root_level,
-                    formatter="default"
+                    handler_type="console", level=self.root_level, formatter="default"
                 )
             }
 
@@ -86,7 +87,7 @@ class LoggingConfig:
             self.formatters = {
                 "default": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                 "detailed": "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
-                "json": '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
+                "json": '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}',
             }
 
         # 设置默认日志记录器
@@ -118,47 +119,47 @@ class LogConfigManager:
                     handler_type="console",
                     level=LogLevel.INFO,
                     formatter="default",
-                    stream="stdout"
+                    stream="stdout",
                 ),
                 "file": LogHandlerConfig(
                     handler_type="file",
                     level=LogLevel.DEBUG,
                     formatter="detailed",
-                    filename="logs/app.log"
+                    filename="logs/app.log",
                 ),
                 "error_file": LogHandlerConfig(
                     handler_type="file",
                     level=LogLevel.ERROR,
                     formatter="detailed",
-                    filename="logs/error.log"
-                )
+                    filename="logs/error.log",
+                ),
             },
             loggers={
                 "src.deep_think": LoggerConfig(
                     name="src.deep_think",
                     level=LogLevel.DEBUG,
                     handlers=["console", "file"],
-                    propagate=False
+                    propagate=False,
                 ),
                 "src.deep_think.core": LoggerConfig(
                     name="src.deep_think.core",
                     level=LogLevel.INFO,
                     handlers=["console"],
-                    propagate=True
+                    propagate=True,
                 ),
                 "src.deep_think.stages": LoggerConfig(
                     name="src.deep_think.stages",
                     level=LogLevel.DEBUG,
                     handlers=["console", "file"],
-                    propagate=False
+                    propagate=False,
                 ),
                 "src.deep_think.orchestrator": LoggerConfig(
                     name="src.deep_think.orchestrator",
                     level=LogLevel.TRACE,
                     handlers=["console", "file"],
-                    propagate=False
-                )
-            }
+                    propagate=False,
+                ),
+            },
         )
 
     @classmethod
@@ -184,20 +185,14 @@ class LogConfigManager:
         config.root_handlers = ["console"]
         config.handlers = {
             "console": LogHandlerConfig(
-                handler_type="console",
-                level=LogLevel.WARN,
-                formatter="default",
-                stream="stdout"
+                handler_type="console", level=LogLevel.WARN, formatter="default", stream="stdout"
             )
         }
 
         # 简化日志记录器配置
         config.loggers = {
             "src.deep_think": LoggerConfig(
-                name="src.deep_think",
-                level=LogLevel.INFO,
-                handlers=["console"],
-                propagate=False
+                name="src.deep_think", level=LogLevel.INFO, handlers=["console"], propagate=False
             )
         }
 
@@ -276,7 +271,9 @@ class LogConfigManager:
     def _create_handler(self, handler_config: LogHandlerConfig) -> Optional[logging.Handler]:
         """创建日志处理器"""
         # 创建格式化器
-        formatter_str = self.config.formatters.get(handler_config.formatter, self.config.formatters["default"])
+        formatter_str = self.config.formatters.get(
+            handler_config.formatter, self.config.formatters["default"]
+        )
         formatter = logging.Formatter(formatter_str)
 
         # 创建处理器
@@ -313,7 +310,7 @@ class LogConfigManager:
                 handler_config.filename,
                 maxBytes=handler_config.max_bytes,
                 backupCount=handler_config.backup_count,
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
         elif handler_config.handler_type == "timed_rotating_file":
@@ -331,7 +328,7 @@ class LogConfigManager:
                 when=handler_config.when,
                 interval=handler_config.interval,
                 backupCount=handler_config.backup_count,
-                encoding="utf-8"
+                encoding="utf-8",
             )
 
         else:

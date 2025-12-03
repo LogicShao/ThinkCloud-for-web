@@ -14,11 +14,11 @@ class SynthesizerStageProcessor(BaseStageProcessor):
     """整合阶段处理器"""
 
     def __init__(
-            self,
-            llm_service,
-            json_parser,
-            prompt_template: IPromptTemplate,
-            verbose: bool = True,
+        self,
+        llm_service,
+        json_parser,
+        prompt_template: IPromptTemplate,
+        verbose: bool = True,
     ):
         """
         初始化整合阶段处理器
@@ -73,15 +73,16 @@ class SynthesizerStageProcessor(BaseStageProcessor):
 
         except Exception as e:
             # 打印原始响应方便调试
-            if 'response' in locals():
+            if "response" in locals():
                 if len(response) > 0:
                     self.logger.warning(
-                        f"[SYNTHESIZE] 整合失败，响应长度: {len(response)}, 前1000字符: {response[:1000]}")
+                        f"[SYNTHESIZE] 整合失败，响应长度: {len(response)}, 前1000字符: {response[:1000]}"
+                    )
                     self.logger.debug(f"[SYNTHESIZE] 完整原始响应: {response}")
                 else:
-                    self.logger.error(f"[SYNTHESIZE] 整合失败，响应为空！")
+                    self.logger.error("[SYNTHESIZE] 整合失败，响应为空！")
             else:
-                self.logger.error(f"[SYNTHESIZE] 整合失败，response变量未定义")
+                self.logger.error("[SYNTHESIZE] 整合失败，response变量未定义")
 
             self.logger.warning(f"[SYNTHESIZE] 整合失败: {e}")
             # 容错: 使用回退答案

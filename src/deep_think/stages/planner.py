@@ -14,12 +14,12 @@ class PlannerStageProcessor(BaseStageProcessor):
     """规划阶段处理器"""
 
     def __init__(
-            self,
-            llm_service,
-            json_parser,
-            prompt_template: IPromptTemplate,
-            max_subtasks: int = 6,
-            verbose: bool = True,
+        self,
+        llm_service,
+        json_parser,
+        prompt_template: IPromptTemplate,
+        max_subtasks: int = 6,
+        verbose: bool = True,
     ):
         """
         初始化规划阶段处理器
@@ -65,16 +65,18 @@ class PlannerStageProcessor(BaseStageProcessor):
 
         except Exception as e:
             # 打印原始响应方便调试
-            if 'response' in locals():
+            if "response" in locals():
                 if len(response) > 0:
                     # 预览前1000字符到WARNING级别
-                    self.logger.warning(f"[PLAN] 规划失败，响应长度: {len(response)}, 前1000字符: {response[:1000]}")
+                    self.logger.warning(
+                        f"[PLAN] 规划失败，响应长度: {len(response)}, 前1000字符: {response[:1000]}"
+                    )
                     # 完整响应到DEBUG级别
                     self.logger.debug(f"[PLAN] 完整原始响应: {response}")
                 else:
-                    self.logger.error(f"[PLAN] 规划失败，响应为空！")
+                    self.logger.error("[PLAN] 规划失败，响应为空！")
             else:
-                self.logger.error(f"[PLAN] 规划失败，response变量未定义")
+                self.logger.error("[PLAN] 规划失败，response变量未定义")
 
             self.logger.warning(f"[PLAN] 规划失败: {e}")
             # 容错: 创建一个默认的简单规划

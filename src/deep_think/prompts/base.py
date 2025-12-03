@@ -47,5 +47,6 @@ class BasePromptTemplate(IPromptTemplate):
         """获取模板所需的参数列表"""
         # 从模板字符串中提取所有 {param} 格式的参数
         import re
-        params = re.findall(r'\{(\w+)\}', self._template)
+
+        params = re.findall(r"\{(\w+)\}", self._template)
         return list(set(params))  # 去重

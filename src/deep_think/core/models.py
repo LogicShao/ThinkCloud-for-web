@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 class ThinkingStage(Enum):
     """深度思考的各个阶段"""
+
     PLAN = "plan"
     SOLVE = "solve"
     SYNTHESIZE = "synthesize"
@@ -19,6 +20,7 @@ class ThinkingStage(Enum):
 @dataclass
 class Subtask:
     """子任务数据结构"""
+
     id: int
     description: str
     priority: str = "medium"  # high, medium, low
@@ -28,6 +30,7 @@ class Subtask:
 @dataclass
 class Plan:
     """任务规划结果"""
+
     clarified_question: str
     subtasks: List[Subtask]
     plan_text: str
@@ -37,6 +40,7 @@ class Plan:
 @dataclass
 class SubtaskResult:
     """子任务执行结果"""
+
     subtask_id: int
     description: str
     analysis: str
@@ -50,6 +54,7 @@ class SubtaskResult:
 @dataclass
 class ReviewResult:
     """审查结果"""
+
     issues_found: List[str]
     improvement_suggestions: List[str]
     overall_quality_score: float  # 0.0 - 1.0
@@ -59,6 +64,7 @@ class ReviewResult:
 @dataclass
 class DeepThinkResult:
     """深度思考完整结果"""
+
     original_question: str
     final_answer: str
     plan: Plan
@@ -71,6 +77,7 @@ class DeepThinkResult:
 @dataclass
 class StageContext:
     """阶段执行上下文"""
+
     original_question: str
     model: str
     system_instruction: Optional[str] = None
@@ -84,6 +91,7 @@ class StageContext:
 @dataclass
 class StageResult:
     """阶段执行结果基类"""
+
     stage: ThinkingStage
     success: bool
     data: Any

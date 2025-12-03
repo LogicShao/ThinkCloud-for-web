@@ -90,17 +90,17 @@ class MultiProviderAPIService:
             self.cache[key] = (value, datetime.now())
 
     def chat_completion(
-            self,
-            messages,
-            model,
-            system_instruction=None,
-            temperature=None,
-            top_p=None,
-            max_tokens=None,
-            frequency_penalty=None,
-            presence_penalty=None,
-            stream=False,
-            **kwargs,
+        self,
+        messages,
+        model,
+        system_instruction=None,
+        temperature=None,
+        top_p=None,
+        max_tokens=None,
+        frequency_penalty=None,
+        presence_penalty=None,
+        stream=False,
+        **kwargs,
     ):
         """
         调用聊天完成API
@@ -147,16 +147,16 @@ class MultiProviderAPIService:
             )
 
     def _chat_completion_stream(
-            self,
-            messages,
-            model,
-            system_instruction=None,
-            temperature=None,
-            top_p=None,
-            max_tokens=None,
-            frequency_penalty=None,
-            presence_penalty=None,
-            **kwargs,
+        self,
+        messages,
+        model,
+        system_instruction=None,
+        temperature=None,
+        top_p=None,
+        max_tokens=None,
+        frequency_penalty=None,
+        presence_penalty=None,
+        **kwargs,
     ):
         """流式传输实现（生成器）"""
         # 根据模型确定提供商
@@ -201,16 +201,16 @@ class MultiProviderAPIService:
             yield error_msg
 
     def _chat_completion_sync(
-            self,
-            messages,
-            model,
-            system_instruction=None,
-            temperature=None,
-            top_p=None,
-            max_tokens=None,
-            frequency_penalty=None,
-            presence_penalty=None,
-            **kwargs,
+        self,
+        messages,
+        model,
+        system_instruction=None,
+        temperature=None,
+        top_p=None,
+        max_tokens=None,
+        frequency_penalty=None,
+        presence_penalty=None,
+        **kwargs,
     ):
         """非流式传输实现（返回字符串）"""
         # 使用缓存
@@ -261,16 +261,18 @@ class MultiProviderAPIService:
             )
 
             # 确保结果是字符串而非生成器（某些提供商可能错误返回生成器）
-            if hasattr(result, '__iter__') and not isinstance(result, (str, bytes)):
+            if hasattr(result, "__iter__") and not isinstance(result, (str, bytes)):
                 print(f"[WARN] {provider_name} 在非流式模式下返回了生成器，正在转换...")
                 print(f"[DEBUG] Response type: {type(result)}")
-                print(f"[DEBUG] Response dir: {[attr for attr in dir(result) if not attr.startswith('_')][:10]}")
+                print(
+                    f"[DEBUG] Response dir: {[attr for attr in dir(result) if not attr.startswith('_')][:10]}"
+                )
 
                 # 尝试直接获取内容（如果这是ChatCompletion对象而不是生成器）
-                if hasattr(result, 'choices'):
-                    print(f"[DEBUG] Response has 'choices' attribute, extracting directly...")
+                if hasattr(result, "choices"):
+                    print("[DEBUG] Response has 'choices' attribute, extracting directly...")
                     try:
-                        if len(result.choices) > 0 and hasattr(result.choices[0], 'message'):
+                        if len(result.choices) > 0 and hasattr(result.choices[0], "message"):
                             direct_content = result.choices[0].message.content
                             if direct_content:
                                 print(f"[INFO] 直接提取成功，内容长度: {len(direct_content)}")
@@ -287,24 +289,28 @@ class MultiProviderAPIService:
                         # 尝试多种方式提取内容
                         if isinstance(chunk, str):
                             chunks.append(chunk)
-                        elif hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                        elif hasattr(chunk, "choices") and len(chunk.choices) > 0:
                             # OpenAI ChatCompletionChunk格式
-                            if hasattr(chunk.choices[0], 'delta') and hasattr(chunk.choices[0].delta, 'content'):
+                            if hasattr(chunk.choices[0], "delta") and hasattr(
+                                chunk.choices[0].delta, "content"
+                            ):
                                 content = chunk.choices[0].delta.content
                                 if content:
                                     chunks.append(content)
-                            elif hasattr(chunk.choices[0], 'message') and hasattr(chunk.choices[0].message, 'content'):
+                            elif hasattr(chunk.choices[0], "message") and hasattr(
+                                chunk.choices[0].message, "content"
+                            ):
                                 content = chunk.choices[0].message.content
                                 if content:
                                     chunks.append(content)
-                        elif hasattr(chunk, 'content'):
-                            chunks.append(chunk.content if chunk.content else '')
-                        elif hasattr(chunk, 'text'):
-                            chunks.append(chunk.text if chunk.text else '')
+                        elif hasattr(chunk, "content"):
+                            chunks.append(chunk.content if chunk.content else "")
+                        elif hasattr(chunk, "text"):
+                            chunks.append(chunk.text if chunk.text else "")
                         else:
                             chunks.append(str(chunk))
 
-                    result = ''.join(chunks)
+                    result = "".join(chunks)
                     print(f"[INFO] 生成器转换完成，共{len(chunks)}个chunk，总长度: {len(result)}")
                 except Exception as convert_error:
                     print(f"[ERROR] 生成器转换失败: {convert_error}")

@@ -227,6 +227,7 @@ graph TD
 ## 运行与开发
 
 ### 环境准备
+
 ```bash
 # 安装依赖
 pip install -r requirements.txt
@@ -237,6 +238,7 @@ cp .env.example .env
 ```
 
 ### 启动应用
+
 ```bash
 python main.py
 # 自动查找可用端口（7860起）
@@ -244,6 +246,7 @@ python main.py
 ```
 
 ### 测试命令
+
 ```bash
 # UI组件测试
 python tests/test_ui.py

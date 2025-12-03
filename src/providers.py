@@ -31,17 +31,17 @@ class BaseProvider(ABC):
 
     @abstractmethod
     def chat_completion(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            stream: bool = False,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        stream: bool = False,
+        **kwargs,
     ):
         """
         调用聊天完成API
@@ -88,17 +88,17 @@ class CerebrasProvider(BaseProvider):
         return self.client is not None
 
     def chat_completion(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            stream: bool = False,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        stream: bool = False,
+        **kwargs,
     ):
         """调用Cerebras聊天完成API"""
         if not self.is_available():
@@ -178,45 +178,57 @@ class DeepSeekProvider(BaseProvider):
         return self.client is not None
 
     def chat_completion(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            stream: bool = False,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        stream: bool = False,
+        **kwargs,
     ):
         """调用DeepSeek聊天完成API"""
         if stream:
             # 流式传输 - 调用生成器方法
             return self._chat_completion_stream(
-                messages, model, system_instruction,
-                temperature, top_p, max_tokens,
-                frequency_penalty, presence_penalty, **kwargs
+                messages,
+                model,
+                system_instruction,
+                temperature,
+                top_p,
+                max_tokens,
+                frequency_penalty,
+                presence_penalty,
+                **kwargs,
             )
         else:
             # 非流式传输 - 调用普通方法（没有yield，不是生成器）
             return self._chat_completion_sync(
-                messages, model, system_instruction,
-                temperature, top_p, max_tokens,
-                frequency_penalty, presence_penalty, **kwargs
+                messages,
+                model,
+                system_instruction,
+                temperature,
+                top_p,
+                max_tokens,
+                frequency_penalty,
+                presence_penalty,
+                **kwargs,
             )
 
     def _chat_completion_sync(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        **kwargs,
     ):
         """非流式聊天完成（普通方法，非生成器）"""
         if not self.is_available():
@@ -247,7 +259,7 @@ class DeepSeekProvider(BaseProvider):
             # 调试信息
 
             # 提取内容
-            if not hasattr(response, 'choices') or len(response.choices) == 0:
+            if not hasattr(response, "choices") or len(response.choices) == 0:
                 return "错误: API响应格式异常"
 
             content = response.choices[0].message.content
@@ -260,16 +272,16 @@ class DeepSeekProvider(BaseProvider):
             return f"{self.provider_name} API调用失败: {e!s}"
 
     def _chat_completion_stream(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        **kwargs,
     ):
         """流式聊天完成（生成器方法）"""
         if not self.is_available():
@@ -305,6 +317,8 @@ class DeepSeekProvider(BaseProvider):
 
         except Exception as e:
             yield f"{self.provider_name} API调用失败: {e!s}"
+
+
 class OpenAIProvider(BaseProvider):
     """OpenAI提供商实现"""
 
@@ -330,17 +344,17 @@ class OpenAIProvider(BaseProvider):
         return self.client is not None
 
     def chat_completion(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            stream: bool = False,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        stream: bool = False,
+        **kwargs,
     ):
         """调用OpenAI聊天完成API"""
         if not self.is_available():
@@ -384,7 +398,7 @@ class OpenAIProvider(BaseProvider):
                 # 应该直接访问choices属性
 
                 # 确保response有choices属性
-                if not hasattr(response, 'choices'):
+                if not hasattr(response, "choices"):
                     print(f"[ERROR] {self.provider_name} response没有choices属性!")
                     print(f"[ERROR] Response type: {type(response)}")
                     return "错误: API响应格式异常（无choices属性）"
@@ -393,7 +407,7 @@ class OpenAIProvider(BaseProvider):
                     print(f"[ERROR] {self.provider_name} response.choices为空!")
                     return "错误: API响应格式异常（choices为空）"
 
-                if not hasattr(response.choices[0], 'message'):
+                if not hasattr(response.choices[0], "message"):
                     print(f"[ERROR] {self.provider_name} choices[0]没有message属性!")
                     return "错误: API响应格式异常（无message属性）"
 
@@ -439,17 +453,17 @@ class DashScopeProvider(BaseProvider):
         return self.client is not None
 
     def chat_completion(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            stream: bool = False,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        stream: bool = False,
+        **kwargs,
     ):
         """调用DashScope聊天完成API"""
         if not self.is_available():
@@ -495,7 +509,7 @@ class DashScopeProvider(BaseProvider):
                 # 应该直接访问choices属性
 
                 # 确保response有choices属性
-                if not hasattr(response, 'choices'):
+                if not hasattr(response, "choices"):
                     print(f"[ERROR] {self.provider_name} response没有choices属性!")
                     print(f"[ERROR] Response type: {type(response)}")
                     return "错误: API响应格式异常（无choices属性）"
@@ -504,7 +518,7 @@ class DashScopeProvider(BaseProvider):
                     print(f"[ERROR] {self.provider_name} response.choices为空!")
                     return "错误: API响应格式异常（choices为空）"
 
-                if not hasattr(response.choices[0], 'message'):
+                if not hasattr(response.choices[0], "message"):
                     print(f"[ERROR] {self.provider_name} choices[0]没有message属性!")
                     return "错误: API响应格式异常（无message属性）"
 
@@ -550,17 +564,17 @@ class KimiProvider(BaseProvider):
         return self.client is not None
 
     def chat_completion(
-            self,
-            messages: List[Dict],
-            model: str,
-            system_instruction: Optional[str] = None,
-            temperature: Optional[float] = None,
-            top_p: Optional[float] = None,
-            max_tokens: Optional[int] = None,
-            frequency_penalty: Optional[float] = None,
-            presence_penalty: Optional[float] = None,
-            stream: bool = False,
-            **kwargs,
+        self,
+        messages: List[Dict],
+        model: str,
+        system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        stream: bool = False,
+        **kwargs,
     ):
         """调用Kimi聊天完成API"""
         if not self.is_available():
@@ -604,7 +618,7 @@ class KimiProvider(BaseProvider):
                 # 应该直接访问choices属性
 
                 # 确保response有choices属性
-                if not hasattr(response, 'choices'):
+                if not hasattr(response, "choices"):
                     print(f"[ERROR] {self.provider_name} response没有choices属性!")
                     print(f"[ERROR] Response type: {type(response)}")
                     return "错误: API响应格式异常（无choices属性）"
@@ -613,7 +627,7 @@ class KimiProvider(BaseProvider):
                     print(f"[ERROR] {self.provider_name} response.choices为空!")
                     return "错误: API响应格式异常（choices为空）"
 
-                if not hasattr(response.choices[0], 'message'):
+                if not hasattr(response.choices[0], "message"):
                     print(f"[ERROR] {self.provider_name} choices[0]没有message属性!")
                     return "错误: API响应格式异常（无message属性）"
 

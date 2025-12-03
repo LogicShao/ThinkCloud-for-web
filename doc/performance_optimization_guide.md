@@ -7,6 +7,7 @@
 ## 2. API调用性能优化
 
 ### 2.1 连接池和会话复用
+
 - **问题**: 当前实现中，每次API调用都可能创建新的连接
 - **优化**: 在提供商客户端中实现连接池和会话复用
 
@@ -35,6 +36,7 @@ class BaseProvider(ABC):
 ```
 
 ### 2.2 请求参数优化
+
 - **问题**: 当前对所有参数都进行传递，可能导致不必要的计算
 - **优化**: 只传递非默认值的参数
 
@@ -58,6 +60,7 @@ def _build_api_params(self, **kwargs):
 ## 3. 缓存机制优化
 
 ### 3.1 对话历史缓存
+
 - **问题**: 对话历史完全存储在内存中，没有缓存策略
 - **优化**: 实现智能缓存和历史截断
 
@@ -111,6 +114,7 @@ class ChatManager:
 ```
 
 ### 3.2 API响应缓存
+
 - **问题**: 相同问题可能被重复请求
 - **优化**: 实现响应缓存机制
 
@@ -120,11 +124,12 @@ import hashlib
 from functools import lru_cache
 from datetime import datetime, timedelta
 
+
 class CacheManager:
     def __init__(self, ttl_minutes=10):
         self.cache = {}
         self.ttl = timedelta(minutes=ttl_minutes)
-    
+
     def get(self, key: str):
         """获取缓存项"""
         if key in self.cache:
@@ -134,11 +139,11 @@ class CacheManager:
             else:
                 del self.cache[key]  # 清除过期项
         return None
-    
+
     def set(self, key: str, value):
         """设置缓存项"""
         self.cache[key] = (value, datetime.now())
-    
+
     def generate_key(self, messages, model, **kwargs):
         """生成缓存键"""
         cache_input = {
@@ -150,35 +155,37 @@ class CacheManager:
         cache_str = str(sorted(cache_input.items()))
         return hashlib.md5(cache_str.encode()).hexdigest()
 
+
 # 在 MultiProviderAPIService 中使用缓存
 class MultiProviderAPIService:
     def __init__(self):
         self.providers = {}
         self.cache_manager = CacheManager()
         self._initialize_providers()
-    
+
     def chat_completion(self, messages, model, **kwargs):
         # 生成缓存键
         cache_key = self.cache_manager.generate_key(messages, model, **kwargs)
-        
+
         # 尝试从缓存获取
         cached_result = self.cache_manager.get(cache_key)
         if cached_result is not None:
             print(f"[CACHE] 使用缓存响应")
             return cached_result
-        
+
         # 调用实际API
         result = self._call_actual_api(messages, model, **kwargs)
-        
+
         # 存储到缓存
         self.cache_manager.set(cache_key, result)
-        
+
         return result
 ```
 
 ## 4. 前端性能优化
 
 ### 4.1 流式传输优化
+
 - **问题**: 流式传输时频繁更新UI可能影响性能
 - **优化**: 批量更新和防抖机制
 
@@ -240,12 +247,14 @@ def bot_message_with_batching(...):
 ```
 
 ### 4.2 界面响应优化
+
 - **问题**: 长对话历史可能导致界面卡顿
 - **优化**: 虚拟滚动和历史分页
 
 ## 5. 深度思考模式优化
 
 ### 5.1 并行处理子任务
+
 - **问题**: 当前深度思考是串行处理子任务
 - **优化**: 在可能的情况下并行处理独立子任务
 
@@ -316,6 +325,7 @@ class DeepThinkOrchestrator:
 ```
 
 ### 5.2 中间结果缓存
+
 - **问题**: 深度思考的中间步骤可能被重复计算
 - **优化**: 缓存中间结果
 
@@ -351,6 +361,7 @@ class DeepThinkOrchestrator:
 ## 6. 内存管理优化
 
 ### 6.1 对象复用
+
 - **问题**: 频繁创建和销毁对象
 - **优化**: 对象池模式
 
@@ -377,6 +388,7 @@ class MessageProcessorPool:
 ## 7. 错误处理和降级策略
 
 ### 7.1 API降级
+
 - **问题**: 某个提供商不可用时影响整体服务
 - **优化**: 实现API降级和自动切换
 
@@ -385,14 +397,14 @@ class MultiProviderAPIService:
     def chat_completion_with_fallback(self, messages, model, **kwargs):
         """带降级机制的API调用"""
         primary_provider = get_model_provider(model)
-        
+
         # 首先尝试主要提供商
         if self.is_available(primary_provider):
             try:
                 return self.chat_completion(messages, model, **kwargs)
             except Exception as e:
                 print(f"[FALLBACK] {primary_provider} 失败: {e}")
-        
+
         # 尝试其他可用提供商
         fallback_providers = [p for p in self.providers.keys() if p != primary_provider]
         for provider in fallback_providers:
@@ -406,7 +418,7 @@ class MultiProviderAPIService:
                 except Exception as e:
                     print(f"[FALLBACK] {provider} 也失败: {e}")
                     continue
-        
+
         # 所有提供商都失败
         return "所有AI提供商当前都不可用，请稍后重试。"
 ```
@@ -414,6 +426,7 @@ class MultiProviderAPIService:
 ## 8. 监控和性能分析
 
 ### 8.1 性能指标收集
+
 - **问题**: 缺乏性能监控
 - **优化**: 添加性能指标收集
 
@@ -422,22 +435,23 @@ import time
 import statistics
 from collections import defaultdict
 
+
 class PerformanceMonitor:
     def __init__(self):
         self.metrics = defaultdict(list)
-    
+
     def record_api_call(self, provider: str, duration: float, tokens: int = None):
         """记录API调用性能"""
         self.metrics[f"{provider}_response_time"].append(duration)
         if tokens:
             self.metrics[f"{provider}_tokens_per_second"].append(tokens / duration if duration > 0 else 0)
-    
+
     def get_stats(self, provider: str):
         """获取提供商性能统计"""
         response_times = self.metrics.get(f"{provider}_response_time", [])
         if not response_times:
             return {}
-        
+
         return {
             "avg_response_time": statistics.mean(response_times),
             "min_response_time": min(response_times),
@@ -445,12 +459,13 @@ class PerformanceMonitor:
             "p95_response_time": sorted(response_times)[int(0.95 * len(response_times))] if response_times else 0
         }
 
+
 # 在 api_service.py 中集成监控
 class MultiProviderAPIService:
     def __init__(self):
         # ... 其他初始化
         self.monitor = PerformanceMonitor()
-    
+
     def chat_completion(self, ...):
         start_time = time.time()
         try:
@@ -467,11 +482,13 @@ class MultiProviderAPIService:
 ## 9. 配置优化建议
 
 ### 9.1 系统配置
+
 - 调整Gradio队列设置以提高并发处理能力
 - 优化服务器超时设置
 - 配置合适的线程池大小
 
 ### 9.2 环境变量优化
+
 ```bash
 # .env 示例优化配置
 GRADIO_SERVER_NAME=0.0.0.0

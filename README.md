@@ -26,6 +26,7 @@
 
 - **四阶段推理流程** - Plan (规划) → Solve (分析) → Synthesize (整合) → Review (审查)
 - **智能任务拆解** - 自动将复杂问题分解为 3-8 个子任务
+- **🌐 网络搜索增强** - 自动搜索外部信息辅助分析（NEW!）
 - **结构化输出** - 提供详细的思考过程和高质量答案
 - **可配置选项** - 自定义子任务数量、启用/禁用审查、控制详细度
 - **质量保证** - 可选的自我审查机制，提供改进建议
@@ -33,7 +34,8 @@
 ### 技术亮点
 
 - 🏗️ **模块化架构** - 工厂模式、单例模式、清晰的职责分离
-- 🔌 **易于扩展** - 预留工具调用接口（搜索、RAG、代码执行）
+- 🔌 **易于扩展** - 支持网络搜索工具，预留 RAG、代码执行接口
+- 🌐 **Web 搜索集成** - 基于 DuckDuckGo，无需 API 密钥（可选功能）
 - 🛡️ **健壮的容错** - 多重 JSON 解析策略、自动降级处理
 - 📊 **详细的日志** - 完整的执行过程追踪
 - 🚦 **自动端口管理** - 智能检测并使用可用端口
@@ -92,8 +94,14 @@ cd SimpleLLMFront
 ### 2. 安装依赖
 
 ```bash
+# 安装基础依赖
 pip install -r requirements.txt
+
+# （可选）安装网络搜索功能
+pip install duckduckgo-search
 ```
+
+**注意**: `duckduckgo-search` 是可选依赖，用于支持深度思考模式的网络搜索功能。如不需要此功能，可跳过安装。
 
 ### 3. 配置API密钥
 
@@ -234,6 +242,7 @@ python main.py
 
 - 📘 [深度思考功能完整文档](doc/deep_thinking_feature.md)
 - 🚀 [快速开始指南](doc/deep_thinking_quickstart.md)
+- 🌐 [网络搜索功能文档](doc/web_search_feature.md) ← **NEW!**
 
 ## 🖥️ 界面说明
 
@@ -327,7 +336,8 @@ SimpleLLMFront/
 │   └── test_deep_think.py        # 深度思考模块测试
 ├── doc/                          # 功能文档
 │   ├── deep_thinking_feature.md  # 深度思考完整文档
-│   └── deep_thinking_quickstart.md # 深度思考快速开始
+│   ├── deep_thinking_quickstart.md # 深度思考快速开始
+│   └── web_search_feature.md     # 网络搜索功能文档
 ├── .env                          # API 密钥配置（gitignored）
 ├── .env.example                  # 环境变量示例
 ├── requirements.txt              # 依赖列表
