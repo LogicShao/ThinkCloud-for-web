@@ -1,8 +1,9 @@
 """
 UI布局构建器 - 纯UI创建，不涉及业务逻辑
-遵循单一职责原则，只负责创建和布局Gradio界面组件
+遵循单一职责原则,只负责创建和布局Gradio界面组件
 """
 
+import os
 import gradio as gr
 
 from src.config import (
@@ -41,14 +42,31 @@ class UIComposer:
             gradio.Blocks: Gradio界面实例
         """
         with gr.Blocks(title="ThinkCloud for Web - AI 智能对话") as demo:
+            # 添加自定义CSS样式(通过HTML)
+            gr.HTML("""
+            <style>
+                /* 紧凑化样式 */
+                .gradio-container { max-width: 100% !important; }
+                .block { padding: 0.5rem !important; }
+                h3 { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
+                .form { gap: 0.5rem !important; }
+                .accordion { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
+                input[type="range"] { margin-top: 0.3rem !important; margin-bottom: 0.3rem !important; }
+                input[type="checkbox"] { margin: 0.2rem !important; }
+                .footer-text { text-align: center !important; font-size: 0.9rem !important; color: #666 !important; margin: 0 !important; }
+                .gap { gap: 0.5rem !important; }
+                .flex-col { gap: 0.5rem !important; }
+            </style>
+            """, visible=False)
+
             # 标题和描述
             gr.Markdown(header_markdown_fn())
 
             # 主要内容区域
             with gr.Row(equal_height=True):
                 # 左侧控制面板
-                with gr.Column(scale=1, min_width=250):
-                    gr.Markdown("### 控制中心")
+                with gr.Column(scale=1, min_width=220):
+                    gr.Markdown("### ⚙️ 控制中心")
 
                     # 获取分组的模型数据
                     from src.config import PROVIDER_DISPLAY_NAMES, get_enabled_providers
@@ -70,12 +88,12 @@ class UIComposer:
                         else provider_choices[0]
                     )
 
-                    # 提供商和模型选择（水平排列）
+                    # 提供商和模型选择
                     provider_dropdown = gr.Dropdown(
                         choices=provider_choices,
                         value=default_provider_name,
-                        label="提供商",
-                        info="AI服务提供商",
+                        label="🤖 提供商",
+                        info=None,
                         interactive=True,
                     )
 
@@ -90,34 +108,35 @@ class UIComposer:
                         value=DEFAULT_MODEL
                         if DEFAULT_MODEL in default_models
                         else (default_models[0] if default_models else ""),
-                        label="模型",
-                        info="AI模型",
+                        label="🎯 模型",
+                        info=None,
                         interactive=True,
                     )
 
                     # 系统状态
-                    gr.Markdown("### 系统状态")
+                    gr.Markdown("### 📊 状态")
                     status_html = gr.HTML(value=status_html_fn())
 
-                    gr.Markdown("### 模型参数")
+                    gr.Markdown("### 🎛️ 参数")
 
                     # 控制选项（水平排列）
                     with gr.Row():
                         enable_streaming = gr.Checkbox(
-                            label="流式输出", value=True, scale=1
+                            label="流式", value=True, scale=1
                         )
                         deep_think_enabled = gr.Checkbox(
-                            label="深度思考", value=False, scale=1
+                            label="深思", value=False, scale=1
                         )
 
-                    # 系统提示词
-                    system_instruction = gr.Textbox(
-                        label="系统提示词",
-                        placeholder="设置AI角色和行为",
-                        value="",
-                        lines=2,
-                        info="留空使用默认值",
-                    )
+                    # 系统提示词(折叠状态)
+                    with gr.Accordion("💬 系统提示", open=False):
+                        system_instruction = gr.Textbox(
+                            label="",
+                            placeholder="设置AI角色和行为(可选)",
+                            value="",
+                            lines=2,
+                            container=False,
+                        )
 
                     # 主要参数
                     temperature = gr.Slider(
@@ -125,19 +144,19 @@ class UIComposer:
                         maximum=MODEL_PARAMETERS["temperature"]["max"],
                         value=MODEL_PARAMETERS["temperature"]["default"],
                         step=MODEL_PARAMETERS["temperature"]["step"],
-                        label="温度",
-                        info="随机性控制",
+                        label="🌡️ 温度",
+                        info=None,
                     )
 
                     # 高级参数
-                    with gr.Accordion("高级参数", open=False):
+                    with gr.Accordion("⚙️ 高级参数", open=False):
                         top_p = gr.Slider(
                             minimum=MODEL_PARAMETERS["top_p"]["min"],
                             maximum=MODEL_PARAMETERS["top_p"]["max"],
                             value=MODEL_PARAMETERS["top_p"]["default"],
                             step=MODEL_PARAMETERS["top_p"]["step"],
                             label="Top P",
-                            info="词汇范围控制",
+                            info=None,
                         )
 
                         max_tokens = gr.Slider(
@@ -146,7 +165,7 @@ class UIComposer:
                             value=MODEL_PARAMETERS["max_tokens"]["default"],
                             step=MODEL_PARAMETERS["max_tokens"]["step"],
                             label="最大长度",
-                            info="Token上限",
+                            info=None,
                         )
 
                         frequency_penalty = gr.Slider(
@@ -155,7 +174,7 @@ class UIComposer:
                             value=MODEL_PARAMETERS["frequency_penalty"]["default"],
                             step=MODEL_PARAMETERS["frequency_penalty"]["step"],
                             label="频率惩罚",
-                            info="减少重复词",
+                            info=None,
                         )
 
                         presence_penalty = gr.Slider(
@@ -164,19 +183,20 @@ class UIComposer:
                             value=MODEL_PARAMETERS["presence_penalty"]["default"],
                             step=MODEL_PARAMETERS["presence_penalty"]["step"],
                             label="存在惩罚",
-                            info="增加多样性",
+                            info=None,
                         )
 
                     # 深度思考选项
-                    with gr.Accordion("深度思考选项", open=False):
-                        enable_review = gr.Checkbox(
-                            label="自我审查", value=True, info="质量审查"
-                        )
-                        enable_web_search = gr.Checkbox(
-                            label="网络搜索", value=False, info="搜索外部信息"
-                        )
+                    with gr.Accordion("🧠 深度思考", open=False):
+                        with gr.Row():
+                            enable_review = gr.Checkbox(
+                                label="审查", value=True, scale=1
+                            )
+                            enable_web_search = gr.Checkbox(
+                                label="搜索", value=False, scale=1
+                            )
                         show_thinking_process = gr.Checkbox(
-                            label="显示过程", value=True, info="展示推理步骤"
+                            label="显示推理过程", value=True
                         )
                         max_subtasks = gr.Slider(
                             minimum=3,
@@ -184,27 +204,25 @@ class UIComposer:
                             value=6,
                             step=1,
                             label="子任务数",
-                            info="问题拆解数量",
+                            info=None,
                         )
 
-                    gr.Markdown(
+                    # 简化的功能提示
+                    with gr.Accordion("💡 功能提示", open=False):
+                        gr.Markdown(
+                            """
+                        • Markdown & 代码高亮
+                        • 多轮对话 & 随时切换模型
+                        • 🧠 深度思考模式
+                        • 🌐 网络搜索(即将开放)
                         """
-                    💡 **功能提示**
-
-                    • 支持 Markdown 格式
-                    • 支持代码高亮
-                    • 支持多轮对话
-                    • 可随时切LLM模型
-                    • 🧠 深度思考模式可解决复杂问题
-                    • 🌐 网络搜索功能可获取最新信息
-                    """
-                    )
+                        )
 
                 # 右侧聊天区域
                 with gr.Column(scale=3, min_width=600):
                     # 聊天界面
                     chatbot = gr.Chatbot(
-                        label="对话",
+                        label="💬 对话",
                         height=CHATBOT_HEIGHT,
                         latex_delimiters=[],
                         line_breaks=True,
@@ -214,30 +232,30 @@ class UIComposer:
 
             # 输入区域
             with gr.Row():
-                with gr.Column(scale=1, min_width=250):
+                with gr.Column(scale=1, min_width=220):
                     pass
 
                 with gr.Column(scale=3, min_width=600), gr.Row():
                     msg = gr.Textbox(
                         label="",
-                        placeholder="输入问题...",
+                        placeholder="💭 输入问题...",
                         scale=5,
                         max_lines=MAX_INPUT_LINES,
                         container=False,
                     )
                     submit_btn = gr.Button(
-                        "发送", variant="primary", scale=1, size="sm", min_width=60
+                        "📤 发送", variant="primary", scale=1, size="sm", min_width=60
                     )
 
             # 控制按钮区域
             with gr.Row():
-                with gr.Column(scale=1, min_width=250):
+                with gr.Column(scale=1, min_width=220):
                     pass
 
                 with gr.Column(scale=3, min_width=600), gr.Row():
-                    clear_btn = gr.Button("清除", variant="secondary", size="sm", scale=1)
-                    export_btn = gr.Button("导出", variant="secondary", size="sm", scale=1)
-                    gr.Markdown("ThinkCloud")
+                    clear_btn = gr.Button("🗑️ 清除", variant="secondary", size="sm", scale=1)
+                    export_btn = gr.Button("💾 导出", variant="secondary", size="sm", scale=1)
+                    gr.Markdown("**ThinkCloud**", elem_classes="footer-text")
 
             # 绑定事件（通过事件处理器）
             event_handlers.setup_all_events(

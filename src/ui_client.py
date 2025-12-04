@@ -9,6 +9,8 @@ from src.event_handlers import EventHandlers
 from src.response_handlers import DeepThinkHandler, ResponseHandler
 from src.ui_composer import UIComposer
 
+import gradio as gr
+
 
 class UIClient:
     """UI客户端类 - 整合UI组件和事件处理"""

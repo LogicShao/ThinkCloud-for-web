@@ -92,8 +92,8 @@ SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 7860
 
 # 界面配置
-CHATBOT_HEIGHT = 500
-MAX_INPUT_LINES = 5
+CHATBOT_HEIGHT = 650  # 增加聊天区域高度,提升空间利用率
+MAX_INPUT_LINES = 3  # 减少输入框默认行数
 
 # 提供商显示名称映射
 PROVIDER_DISPLAY_NAMES = {

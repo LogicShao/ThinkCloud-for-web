@@ -1,12 +1,15 @@
 # 🚀 ThinkCloud for Web
 
-一个基于 Gradio 的多提供商 LLM 聊天客户端，支持 Cerebras、DeepSeek、OpenAI 和 DashScope (阿里云百炼) 等多种 AI 提供商。
+一个基于 Gradio 的多提供商 LLM 聊天客户端，支持 Cerebras、DeepSeek、OpenAI、DashScope (阿里云百炼) 和 Kimi (月之暗面) 等多种
+AI 提供商。
 
-**✨ 特色功能：🧠 深度思考模式** - 通过多阶段推理系统深入分析复杂问题，自动拆解任务、逐步分析、整合结论并进行质量审查。
+**✨ 特色功能：🧠 深度思考模式** - 通过四阶段推理系统（规划→分析→整合→审查）深入分析复杂问题，支持网络搜索增强和结构化输出。
 
-**⚙️ 高级参数控制** - 支持System Instruction、Temperature、Top P、Max Tokens等全面参数调节。
+**⚙️ 高级参数控制** - 支持 System Instruction、Temperature、Top P、Max Tokens 等全面参数调节。
 
-![Version](https://img.shields.io/badge/version-2.0-blue)
+**🏗️ 模块化架构** - 遵循 SOLID 原则的模块化深度思考系统，易于扩展和维护。
+
+![Version](https://img.shields.io/badge/version-3.0-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -14,35 +17,39 @@
 
 ### 核心功能
 
-- 🚀 **多提供商支持** - Cerebras、DeepSeek、OpenAI、DashScope (阿里云百炼)
+- 🚀 **多提供商支持** - Cerebras、DeepSeek、OpenAI、DashScope (阿里云百炼)、Kimi (月之暗面)
 - 🎨 **美观的 Gradio Web 界面** - 响应式设计，支持移动端
 - 🔄 **多轮对话历史** - 自动保存对话上下文
-- 🔧 **灵活的模型选择** - 28+ 模型可选，智能提供商切换
+- 🔧 **灵活的模型选择** - 35+ 模型可选，智能提供商切换
 - ⚡ **实时状态监控** - 提供商可用性实时显示
 - 📋 **便捷的内容操作** - 一键复制、导出对话记录
 - ⚙️ **全面参数控制** - System Instruction、Temperature、Top P、Max Tokens 等
 
-### 🧠 深度思考模式（NEW!）
+### 🧠 深度思考模式 （v3.0 新特性）
 
+- **模块化架构** - 遵循 SOLID 原则，职责分离，易于维护和扩展
 - **四阶段推理流程** - Plan (规划) → Solve (分析) → Synthesize (整合) → Review (审查)
 - **智能任务拆解** - 自动将复杂问题分解为 3-8 个子任务
-- **🌐 网络搜索增强** - 自动搜索外部信息辅助分析（NEW!）
+- **提示模板系统** - 可配置的 Prompt 模板管理器，支持多语言优化
+- **缓存管理** - 支持中间结果缓存，减少重复计算
+- **🌐 网络搜索增强** - 自动搜索外部信息辅助分析（可选功能）
 - **结构化输出** - 提供详细的思考过程和高质量答案
 - **可配置选项** - 自定义子任务数量、启用/禁用审查、控制详细度
 - **质量保证** - 可选的自我审查机制，提供改进建议
 
 ### 技术亮点
 
-- 🏗️ **模块化架构** - 工厂模式、单例模式、清晰的职责分离
-- 🔌 **易于扩展** - 支持网络搜索工具，预留 RAG、代码执行接口
+- 🏗️ **模块化架构** - 遵循 SOLID 原则的深度思考系统，职责分离
+- 🔌 **易于扩展** - 工厂模式设计，新增提供商只需3步
 - 🌐 **Web 搜索集成** - 基于 DuckDuckGo，无需 API 密钥（可选功能）
 - 🛡️ **健壮的容错** - 多重 JSON 解析策略、自动降级处理
-- 📊 **详细的日志** - 完整的执行过程追踪
+- 📊 **详细的日志** - 完整的执行过程追踪和 LLM 调用统计
 - 🚦 **自动端口管理** - 智能检测并使用可用端口
+- 💾 **缓存支持** - 中间结果缓存，减少重复计算
 
 ## 支持的提供商和模型
 
-### Cerebras
+### Cerebras (10 个模型)
 
 - `llama-3.3-70b`
 - `llama-3.1-8b`
@@ -55,20 +62,20 @@
 - `gpt-oss-120b`
 - `qwen-3-32b`
 
-### DeepSeek
+### DeepSeek (3 个模型)
 
 - `deepseek-chat`
 - `deepseek-coder`
 - `deepseek-reasoner`
 
-### OpenAI
+### OpenAI (4 个模型)
 
 - `gpt-4o`
 - `gpt-4o-mini`
 - `gpt-4-turbo`
 - `gpt-3.5-turbo`
 
-### DashScope（阿里云百炼）
+### DashScope（阿里云百炼）(11 个模型)
 
 - `qwen-max`
 - `qwen-plus`
@@ -81,6 +88,16 @@
 - `qwen2-72b-instruct`
 - `qwen2-1.5b-instruct`
 - `qwen2-57b-a14b-instruct`
+
+### Kimi（月之暗面）(7 个模型)
+
+- `moonshot-v1-8k` (8K 上下文)
+- `moonshot-v1-32k` (32K 上下文)
+- `moonshot-v1-128k` (128K 上下文)
+- `kimi-k2-0905-preview` (256K 上下文，最新版本)
+- `kimi-k2-turbo-preview` (高速版本，60-100 Tokens/s)
+- `kimi-k2-thinking` (长思考模型，256K 上下文)
+- `kimi-k2-thinking-turbo` (长思考高速版本)
 
 ## 安装和运行
 
@@ -323,37 +340,88 @@ python -m py_compile main.py src/*.py
 ```
 SimpleLLMFront/
 ├── src/                          # 源代码模块
+│   ├── __init__.py               # 包标识
+│   ├── CLAUDE.md                 # 模块级 AI 指引
 │   ├── api_service.py            # 多提供商 API 编排（单例模式）
 │   ├── chat_manager.py           # 对话历史管理
 │   ├── config.py                 # 配置、提供商/模型映射、端口工具
 │   ├── providers.py              # 提供商实现（工厂模式）
-│   └── deep_think.py             # 深度思考编排器（多阶段推理）
+│   ├── event_handlers.py         # 事件处理器
+│   ├── ui_client.py              # UI 客户端总协调器
+│   ├── ui_composer.py            # UI 布局构建器
+│   ├── response_handlers.py      # 响应处理器
+│   ├── logging.py                # 日志配置
+│   └── deep_think/               # 深度思考系统（模块化架构）
+│       ├── __init__.py           # 向后兼容接口
+│       ├── core/                 # 核心接口和模型
+│       │   ├── __init__.py
+│       │   ├── interfaces.py    # 抽象基类和接口定义
+│       │   └── models.py        # 数据模型定义
+│       ├── stages/               # 阶段处理器
+│       │   ├── __init__.py
+│       │   ├── base.py          # 阶段基类
+│       │   ├── planner.py       # Plan 阶段
+│       │   ├── solver.py        # Solve 阶段
+│       │   ├── synthesizer.py   # Synthesize 阶段
+│       │   └── reviewer.py      # Review 阶段
+│       ├── prompts/              # 提示模板系统
+│       │   ├── __init__.py
+│       │   ├── base.py          # 模板基类
+│       │   ├── templates.py     # 具体模板实现
+│       │   └── manager.py       # 模板管理器
+│       ├── orchestrator.py       # 深度思考编排器
+│       ├── formatter.py         # 结果格式化工具
+│       └── utils.py             # 工具函数
 ├── main.py                       # Gradio UI 和应用入口
 ├── tests/                        # 测试脚本
+│   ├── __pycache__/
 │   ├── test_ui.py                # UI 组件测试
 │   ├── test_port_finder.py       # 端口管理测试
 │   ├── test_model_selector.py    # 模型选择器测试
-│   └── test_deep_think.py        # 深度思考模块测试
+│   ├── test_deep_think.py        # 深度思考模块测试
+│   ├── test_deepseek_fix.py      # DeepSeek 修复测试
+│   └── test_web_search.py        # 网络搜索功能测试
 ├── doc/                          # 功能文档
+│   ├── QUICKSTART.md             # 快速开始
+│   ├── CHEATSHEET.md             # 快速参考
+│   ├── UV_RUFF_GUIDE.md          # UV 和 Ruff 使用指南
 │   ├── deep_thinking_feature.md  # 深度思考完整文档
 │   ├── deep_thinking_quickstart.md # 深度思考快速开始
-│   └── web_search_feature.md     # 网络搜索功能文档
+│   ├── web_search_feature.md     # 网络搜索功能文档
+│   ├── parameter_control_feature.md # 参数控制功能文档
+│   ├── performance_optimization_guide.md # 性能优化指南
+│   ├── logging_guide.md          # 日志系统指南
+│   └── UI_RESTRUCTURE.md         # UI 重构说明
+├── logs/                         # 日志文件目录
+├── assets/                       # 静态资源
+├── scripts/                      # 脚本文件
+├── .venv/                        # 虚拟环境（gitignore）
+├── .claude/                      # AI 上下文索引（gitignore）
+├── .pytest_cache/                # 测试缓存（gitignore）
+├── .idea/                        # IDE 配置（gitignore）
+├── __pycache__/                  # Python 缓存（gitignore）
 ├── .env                          # API 密钥配置（gitignored）
 ├── .env.example                  # 环境变量示例
 ├── requirements.txt              # 依赖列表
-├── CLAUDE.md                     # Claude Code 项目指南
+├── pyproject.toml                # 项目配置（UV）
+├── uv.lock                       # UV 依赖锁定文件
+├── Makefile                      # Makefile 任务自动化
 └── README.md                     # 本文件
 ```
 
-### 开发说明
+### 核心模块说明
 
-- **主应用**：`main.py` - Gradio 界面和事件处理
-- **提供商管理**：`src/providers.py` - 抽象基类和具体实现
+- **主应用**：`main.py` - 应用启动入口和初始化
+- **UI 客户端**：`src/ui_client.py` - 总协调器，组合 UIComposer、EventHandlers、ResponseHandlers
+- **UI 构建器**：`src/ui_composer.py` - 纯 UI 布局构建器
+- **事件处理器**：`src/event_handlers.py` - 用户交互事件处理
+- **响应处理器**：`src/response_handlers.py` - 标准响应和深度思考响应处理
 - **API 服务**：`src/api_service.py` - 多提供商编排（全局单例）
-- **深度思考**：`src/deep_think.py` - 多阶段推理编排器
+- **提供商管理**：`src/providers.py` - 抽象基类和 5 个具体实现
 - **配置管理**：`src/config.py` - 提供商配置、模型映射、端口工具
 - **对话管理**：`src/chat_manager.py` - 历史记录和消息处理
-- **依赖管理**：`requirements.txt`
+- **深度思考**：`src/deep_think/` - 模块化深度思考系统
+- **依赖管理**：`requirements.txt` / `pyproject.toml` / `uv.lock`
 - **环境配置**：`.env` 文件（使用 python-dotenv）
 
 ## 🛠️ 技术栈

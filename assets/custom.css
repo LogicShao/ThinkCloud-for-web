@@ -1,0 +1,57 @@
+/* ThinkCloud 紧凑化样式 */
+
+/* 减少容器最大宽度限制 */
+.gradio-container {
+    max-width: 100% !important;
+}
+
+/* 减少组件间距 */
+.block {
+    padding: 0.5rem !important;
+}
+
+/* 减少标题间距 */
+h3 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* 减少输入框和按钮间距 */
+.form {
+    gap: 0.5rem !important;
+}
+
+/* 优化Accordion间距 */
+.accordion {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* 优化Slider样式 */
+input[type="range"] {
+    margin-top: 0.3rem !important;
+    margin-bottom: 0.3rem !important;
+}
+
+/* 优化Checkbox样式 */
+input[type="checkbox"] {
+    margin: 0.2rem !important;
+}
+
+/* 优化底部文字 */
+.footer-text {
+    text-align: center !important;
+    font-size: 0.9rem !important;
+    color: #666 !important;
+    margin: 0 !important;
+}
+
+/* 减少Row间距 */
+.gap {
+    gap: 0.5rem !important;
+}
+
+/* 优化列间距 */
+.flex-col {
+    gap: 0.5rem !important;
+}
