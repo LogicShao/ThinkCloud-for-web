@@ -4,6 +4,10 @@ __pycache__/
 *.o
 *.obj
 
+# Session files
+.sessions/
+.sessions_test/
+
 # Dependencies
 .venv/
 venv/
@@ -42,3 +46,4 @@ uv.lock
 .ruff_cache/
 
 *.egg-info/
+.cache

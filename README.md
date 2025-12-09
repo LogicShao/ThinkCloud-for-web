@@ -19,6 +19,7 @@ AI 提供商。
 
 - 🚀 **多提供商支持** - Cerebras、DeepSeek、OpenAI、DashScope (阿里云百炼)、Kimi (月之暗面)
 - 🎨 **美观的 Gradio Web 界面** - 响应式设计，支持移动端
+- 🌐 **OpenAI 兼容 API 服务** - FastAPI 实现，完全兼容 OpenAI SDK（新增！）
 - 🔄 **多轮对话历史** - 自动保存对话上下文
 - 🔧 **灵活的模型选择** - 35+ 模型可选，智能提供商切换
 - ⚡ **实时状态监控** - 提供商可用性实时显示
@@ -183,6 +184,18 @@ python main.py
 ```
 
 应用将在 `http://localhost:7860` 启动，并自动在默认浏览器中打开。
+
+### 5. （可选）启动 FastAPI 服务
+
+如果您需要 OpenAI 格式兼容的 API 服务：
+
+```bash
+python fastapi_main.py
+```
+
+FastAPI 服务将在 `http://localhost:8000` 启动，提供完全兼容 OpenAI API 格式的接口。
+
+详细文档请参考：[FastAPI 使用指南](doc/fastapi_usage_guide.md)
 
 ## 📖 使用说明
 
